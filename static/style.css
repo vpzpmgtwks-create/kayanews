@@ -729,39 +729,62 @@ body.still *::after { animation: none !important; }
 }
 
 /* ===================================================================== */
-/*  PRINT — clean, ink-friendly report for the director (Ctrl+P / PDF)   */
+/*  PRINT — full report, in COLOR, for the director (Ctrl+P / Save PDF)   */
 /* ===================================================================== */
 @media print {
-  @page { margin: 14mm 12mm; }
+  @page { margin: 12mm 10mm; }
+
+  /* Force EVERY element to print its real colours + backgrounds, and stop
+     all motion so nothing prints half-faded. Without this, browsers drop
+     background colours/gradients by default. */
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    animation: none !important; transition: none !important;
+  }
   html, body { background: #fff !important; }
-  body { color: #14161d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
-  /* Drop everything screen-only: video hero, chrome, floating UI */
-  .hero-video, .hero-overlay, .loadbar, .toast, .fabs, .marquee,
-  .nav-wrap, .hero-clock, .badge, .hero-cta, .livepill, .cta-mini,
-  .hamb, .nav-menu, .tv-live-sec, .hero-video ~ *:empty { display: none !important; }
+  /* Reveal EVERYTHING: sections + their staggered children may still be at
+     opacity:0 if they were never scrolled into view — force them visible. */
+  .reveal, .reveal *,
+  .reveal .tick, .reveal .senti .card, .reveal .news-item, .reveal .points li,
+  .dcard, .sector, .sec-bar, .gauge svg { opacity: 1 !important; transform: none !important; }
 
-  /* Flatten the hero so the dashboard tray prints at the top of page 1 */
+  /* Drop only screen-only chrome that cannot / should not print:
+     the background video, floating UI, animated tape, and the LIVE
+     TradingView iframes (external live widgets don't render on paper —
+     the VIX chart + fear data still print via our own sections). */
+  .hero-video, .hero-overlay, .loadbar, .toast, .fabs,
+  .nav-wrap, .hamb, .nav-menu, .livepill, .cta-mini, .hero-cta,
+  .tv-live-sec, .marquee { display: none !important; }
+
+  /* Flatten the hero (no full viewport) but KEEP its text + live gauges */
   .hero {
     min-height: 0 !important; height: auto !important; overflow: visible !important;
     border-radius: 0 !important; background: #fff !important;
   }
-  .hero-fg, .hero-content { min-height: 0 !important; padding: 0 !important; display: block !important; }
-  .hl, .hl-sub { display: none !important; }
-  .tray-wrap { margin: 0 !important; transform: none !important; }
-  .tray {
-    box-shadow: none !important; border: 1px solid #d9d6cf !important;
-    background: #fff !important; transform: none !important;
-  }
+  .hero-fg { min-height: 0 !important; }
+  .hero-content { min-height: 0 !important; padding: 10px 14px 4px !important; display: block !important; }
+  .badge { box-shadow: none !important; }
+  .hl { font-size: 26px !important; margin-top: 8px !important; }
+  .hl-sub { font-size: 12.5px !important; margin-top: 8px !important; max-width: none !important; }
+  .tray-wrap { margin-top: 16px !important; transform: none !important; padding: 0 !important; }
+  .tray { transform: none !important; box-shadow: none !important; }
+  .tray-grid { grid-template-columns: repeat(3, 1fr) !important; }
 
-  /* Kill motion + reveals so nothing prints half-faded */
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-  .reveal { opacity: 1 !important; transform: none !important; }
+  /* Full-bleed page for print */
+  .page { padding: 0 !important; }
+  .wrap { max-width: none !important; padding: 12px 12px 8px !important; margin: 0 !important; }
 
-  .wrap { max-width: none !important; padding: 0 !important; margin: 0 !important; }
-  .section { break-inside: avoid; page-break-inside: avoid; }
-  .card, .panel, .dcard, .tick { box-shadow: none !important; border: 1px solid #e2ded7 !important; }
+  /* Keep card colours; just drop heavy shadows so ink stays clean */
+  .card, .panel, .dcard, .tick, .sector { box-shadow: none !important; }
+
+  /* Sensible page breaks */
+  .section { break-inside: avoid; page-break-inside: avoid; margin-top: 18px !important; }
+  .panel, .card, .dcard, .tick, .sector, .news-item, .vix-stat { break-inside: avoid; page-break-inside: avoid; }
+  .news-cols { grid-template-columns: 1fr 1fr !important; }
+
   a[href]::after { content: ""; } /* no ugly URL expansion */
-  .news-item { break-inside: avoid; }
-  .foot { border-top: 1px solid #e2ded7; margin-top: 10px; }
+  .foot { border-top: 1px solid var(--line); margin-top: 12px; }
 }
