@@ -224,6 +224,27 @@
     if (lbl) { lbl.textContent = sc.label_ar || "—"; lbl.style.color = color; }
   }
 
+  // News-sentiment badge next to the score: the index + pos/neg headline split,
+  // so the director sees exactly what's driving today's rating.
+  function renderNewsPill(ns) {
+    var el = $("hv-news-pill");
+    if (!el) return;
+    if (!ns || ns.index == null) { el.style.display = "none"; return; }
+    el.style.display = "inline-flex";
+    var idx = ns.index, pos = ns.pos || 0, neg = ns.neg || 0;
+    var up = idx > 2, down = idx < -2;
+    var color = up ? "#12885a" : down ? "#d1443a" : "#8a8a8a";
+    var bg = up ? "#e7f6ee" : down ? "#fdeceb" : "#f0efec";
+    el.style.color = color; el.style.background = bg;
+    var sign = idx > 0 ? "+" : "";
+    el.title = "مشاعر الأخبار: " + sign + num(idx, 0) + " من ١٠٠ — " +
+      pos + " خبر إيجابي مقابل " + neg + " سلبي";
+    el.innerHTML = (up ? TREND_UP : down ? TREND_DOWN : "") +
+      '<span class="np-idx">' + sign + num(idx, 0) + '</span>' +
+      '<span class="np-c np-up">▲' + pos + '</span>' +
+      '<span class="np-c np-dn">▼' + neg + '</span>';
+  }
+
   function renderMood(fg, initial) {
     fg = fg || {};
     var color = fg.color || "#9ca3af";
@@ -249,6 +270,31 @@
         '<div class="t-price">' + num(q.price, q.price >= 1000 ? 0 : 2) + '</div>' +
         '<div class="t-chg ' + cls + '">' + ar + " " + signed(q.change_pct, 2) + '%</div></div>';
     }).join("");
+  }
+
+  // ---- live ticker-tape (marquee) --------------------------------------
+  // Builds one row of price chips, then injects TWO copies into the track so
+  // the CSS translate(-50%) loop is perfectly seamless.
+  function marqueeChip(q) {
+    if (!q.ok) {
+      return '<span class="mq-item"><span class="mq-name">' + esc(q.name) +
+        '</span><span class="mq-price">—</span></span>';
+    }
+    var cls = q.up ? "up" : "down", ar = q.up ? "▲" : "▼";
+    return '<span class="mq-item"><span class="mq-name">' + esc(q.name) + '</span>' +
+      '<span class="mq-price">' + num(q.price, q.price >= 1000 ? 0 : 2) + '</span>' +
+      '<span class="mq-chg ' + cls + '">' + ar + " " + signed(q.change_pct, 2) + '%</span></span>';
+  }
+  function renderMarquee(quotes) {
+    var el = $("marquee-track");
+    if (!el) return;
+    var list = (quotes || []).filter(function (q) { return q && q.name; });
+    if (!list.length) { el.innerHTML = ""; return; }
+    var row = list.map(function (q) {
+      return marqueeChip(q) + '<span class="mq-sep" aria-hidden="true"></span>';
+    }).join("");
+    // duplicate for a seamless -50% loop
+    el.innerHTML = row + row;
   }
 
   function sentiCard(name, obj, isStable) {
@@ -334,8 +380,10 @@
     lastReport = r;
     renderVix(r.vix, initial);
     renderScore(r.score, initial);
+    renderNewsPill(r.news_sentiment);
     renderMood(r.fear_greed_stocks, initial);
     renderTickers(r.quotes);
+    renderMarquee(r.quotes);
     renderSentiment(r);
     renderDigest(r);
     renderNews(r);
@@ -379,10 +427,7 @@
   function poll() {
     if (busy) return; busy = true; loadbar("go");
     fetch("/api/report", { headers: { "Accept": "application/json" } })
-      .then(function (res) {
-        if (res.status === 401 || res.redirected) { location.href = "/login"; return null; }
-        return res.json();
-      })
+      .then(function (res) { return res.ok ? res.json() : null; })
       .then(function (data) {
         if (data) { renderReport(data, false); toast('<span class="g">●</span> تم تحديث البيانات لحظياً'); }
       })
@@ -423,12 +468,43 @@
     update();
   }
 
+  // ---- live hero clock (viewer's local time, Arabic) --------------------
+  function startClock() {
+    var t = $("hc-time"), d = $("hc-date");
+    if (!t && !d) return;
+    var timeFmt, dateFmt;
+    try {
+      timeFmt = new Intl.DateTimeFormat("ar", {
+        hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true
+      });
+      dateFmt = new Intl.DateTimeFormat("ar", {
+        weekday: "long", day: "numeric", month: "long"
+      });
+    } catch (e) { timeFmt = dateFmt = null; }
+    function paint() {
+      var now = new Date();
+      if (t) t.textContent = timeFmt ? timeFmt.format(now)
+        : _2(now.getHours()) + ":" + _2(now.getMinutes()) + ":" + _2(now.getSeconds());
+      if (d) d.textContent = dateFmt ? dateFmt.format(now) : now.toLocaleDateString();
+    }
+    paint();
+    setInterval(paint, 1000);
+  }
+
+  // ---- print button (FAB) ----------------------------------------------
+  function setupPrint() {
+    var b = $("fab-print");
+    if (b) b.addEventListener("click", function () { window.print(); });
+  }
+
   // ---- boot -------------------------------------------------------------
   document.addEventListener("DOMContentLoaded", function () {
     syncStill();
     setupReveal();
     setupMenu();
     setupTop();
+    setupPrint();
+    startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }
     if (!window.MB_STATIC) setInterval(tick, 1000);

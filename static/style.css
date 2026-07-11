@@ -12,10 +12,10 @@
   /* Convix palette */
   --orange:   #ef4d23;
   --orange-2: #d63e18;
-  --dark:     #0b0f1a;
-  --page:     #ededed;
-  --hero-bg:  #d9d9d9;
-  --tray:     #f5f2ee;
+  --dark:     #12141c;
+  --page:     #f1efea;   /* calm warm neutral */
+  --hero-bg:  #dcd8d2;
+  --tray:     #f6f3ef;
 
   /* Surfaces / ink */
   --surface:   #ffffff;
@@ -74,29 +74,38 @@ a { color: inherit; text-decoration: none; }
 .hero {
   position: relative;
   width: 100%;
-  height: calc(100vh - 24px);
-  min-height: 640px;
+  /* Auto height with a full-viewport floor: the hero grows to fully contain
+     the dashboard tray instead of clipping it. */
+  min-height: calc(100vh - 24px);
   overflow: hidden;
   background: var(--hero-bg);
   border-radius: 22px;
 }
-@media (min-width: 640px) { .hero { height: calc(100vh - 32px); border-radius: 28px; } }
+@media (min-width: 640px) { .hero { min-height: calc(100vh - 32px); border-radius: 28px; } }
 
 .hero-video {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   object-fit: cover; pointer-events: none;
-  z-index: 0;
+  z-index: 0; border-radius: inherit;
 }
 .hero-overlay {
-  position: absolute; inset: 0; z-index: 1;
+  position: absolute; inset: 0; z-index: 1; border-radius: inherit;
+  /* Calm, legible wash: a soft cool tint up top for the nav, a clear middle
+     that lets the video breathe, and a gentle fade into the page below so the
+     dashboard tray settles in without a hard edge. */
   background:
-    linear-gradient(180deg, rgba(255,255,255,.06) 0%, rgba(255,255,255,.02) 40%, rgba(245,242,238,.55) 100%),
-    rgba(255,255,255,.10);
+    linear-gradient(180deg,
+      rgba(16,20,30,.20) 0%,
+      rgba(16,20,30,.05) 16%,
+      rgba(255,255,255,0) 34%,
+      rgba(243,241,237,.30) 66%,
+      rgba(243,241,237,.82) 100%),
+    radial-gradient(120% 60% at 50% 30%, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 60%);
 }
 .hero-fg {
   position: relative; z-index: 2;
-  height: 100%;
+  min-height: inherit;
   display: flex; flex-direction: column;
 }
 
@@ -204,10 +213,9 @@ a { color: inherit; text-decoration: none; }
   flex: 1;
   display: flex; flex-direction: column; align-items: center;
   text-align: center;
-  padding: 40px 18px 0;
-  overflow: hidden;
+  padding: 36px 18px 34px;
 }
-@media (min-width: 640px) { .hero-content { padding: 60px 24px 0; } }
+@media (min-width: 640px) { .hero-content { padding: 52px 24px 44px; } }
 
 .badge {
   display: inline-flex; align-items: center; gap: 8px;
@@ -217,11 +225,28 @@ a { color: inherit; text-decoration: none; }
 }
 .badge-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--orange); }
 
+/* Live clock chip — calm, glassy, sits under the badge */
+.hero-clock {
+  margin-top: 12px;
+  display: inline-flex; align-items: center; gap: 9px;
+  padding: 6px 14px; border-radius: 999px;
+  background: rgba(255,255,255,.62); backdrop-filter: blur(6px);
+  border: 1px solid rgba(255,255,255,.75);
+  font-size: 12.5px; font-weight: 700; color: var(--ink-2);
+  box-shadow: 0 8px 22px -16px rgba(20,18,14,.5);
+  animation: popIn .8s var(--ease-out) both .18s;
+}
+.hero-clock .hc-ic { color: var(--orange); flex: none; }
+.hero-clock .hc-time { font-family: "Amiri", serif; font-weight: 800; font-size: 14px; color: var(--ink); letter-spacing: .3px; font-variant-numeric: tabular-nums; }
+.hero-clock .hc-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
+.hero-clock .hc-date { color: var(--ink-2); }
+
 .hl {
-  margin-top: 22px; max-width: 900px;
-  font-size: clamp(34px, 7.4vw, 68px);
-  line-height: 1.08; font-weight: 700; letter-spacing: -.5px;
+  margin-top: 20px; max-width: 900px;
+  font-size: clamp(33px, 7.1vw, 64px);
+  line-height: 1.1; font-weight: 700; letter-spacing: -.5px;
   color: var(--dark); font-family: "Tajawal", sans-serif;
+  text-shadow: 0 1px 0 rgba(255,255,255,.45), 0 6px 30px rgba(255,255,255,.35);
 }
 .hl-em {
   font-family: "Amiri", serif; font-style: italic; font-weight: 700;
@@ -275,6 +300,13 @@ a { color: inherit; text-decoration: none; }
   background: var(--surface-2); color: var(--ink-3);
 }
 .pill svg { display: block; }
+
+/* News-sentiment badge (next to the score) */
+.np-pill { gap: 6px; padding: 3px 8px; animation: popIn .5s var(--ease-spring) both .9s; }
+.np-pill .np-idx { font-family: "Amiri", serif; font-weight: 800; font-variant-numeric: tabular-nums; }
+.np-pill .np-c { font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.np-pill .np-up { color: #12885a; }
+.np-pill .np-dn { color: #d1443a; }
 
 .gauge { margin-top: 8px; }
 .gauge svg { width: 100%; max-width: 260px; margin: 0 auto; display: block; }
@@ -478,19 +510,60 @@ table.hist .today td { background: #fff6f2; }
 .toast .g { color: #7ce0ad; }
 .toast.show { transform: translate(-50%, 0); opacity: 1; }
 
-/* Back-to-top — appears after scrolling past the hero */
-.totop {
+/* Floating action buttons (print + back-to-top), stacked bottom-left */
+.fabs {
   position: fixed; bottom: 24px; left: 24px; z-index: 55;
+  display: flex; flex-direction: column-reverse; gap: 12px; align-items: center;
+}
+.fab {
   width: 46px; height: 46px; border-radius: 50%; cursor: pointer;
-  border: 1px solid #f8d3c7; background: var(--orange); color: #fff;
   display: grid; place-items: center;
+  border: 1px solid #f8d3c7; background: var(--orange); color: #fff;
   box-shadow: 0 16px 30px -14px rgba(239,77,35,.7);
+  transition: transform .3s var(--ease-spring), filter .2s var(--ease), opacity .4s var(--ease-out);
+}
+.fab:hover { filter: brightness(1.07); transform: translateY(-3px); }
+.fab svg { display: block; }
+/* Print button is calm/neutral so the orange accent stays for the primary CTA */
+.fab-print {
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  box-shadow: var(--shadow-s);
+  animation: popIn .7s var(--ease-out) both .9s;
+}
+.fab-print:hover { color: var(--orange); border-color: #f8d3c7; }
+/* Back-to-top hides until you scroll past the hero */
+.totop {
   opacity: 0; transform: translate3d(0,16px,0) scale(.9); pointer-events: none;
-  transition: opacity .4s var(--ease-out), transform .5s var(--ease-spring), filter .2s var(--ease);
 }
 .totop.show { opacity: 1; transform: none; pointer-events: auto; }
-.totop:hover { filter: brightness(1.07); transform: translateY(-3px); }
-.totop svg { display: block; }
+
+/* ===================================================================== */
+/*  LIVE TICKER TAPE (marquee)                                            */
+/* ===================================================================== */
+.marquee {
+  position: relative; overflow: hidden;
+  max-width: 1120px; margin: 14px auto 0;
+  border-radius: 14px; border: 1px solid var(--line);
+  background: var(--surface); box-shadow: var(--shadow-s);
+  animation: softIn 1s var(--ease-out) both .3s;
+}
+.marquee::before, .marquee::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 64px; z-index: 2; pointer-events: none;
+}
+.marquee::before { right: 0; background: linear-gradient(270deg, var(--surface), rgba(255,255,255,0)); }
+.marquee::after  { left: 0;  background: linear-gradient(90deg,  var(--surface), rgba(255,255,255,0)); }
+.marquee-track {
+  display: inline-flex; align-items: center; gap: 30px;
+  padding: 11px 0; white-space: nowrap;
+  animation: marquee 46s linear infinite; will-change: transform;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee { from { transform: translate3d(0,0,0); } to { transform: translate3d(-50%,0,0); } }
+.mq-item { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
+.mq-name { color: var(--ink-2); }
+.mq-price { font-family: "Amiri", serif; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.mq-chg { font-weight: 800; font-size: 12.5px; }
+.mq-sep { width: 5px; height: 5px; border-radius: 50%; background: var(--line-2); }
 
 /* ===================================================================== */
 /*  TOP BAR (history page)                                                */
@@ -600,4 +673,42 @@ body.still *::after { animation: none !important; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .reveal { opacity: 1; transform: none; }
+}
+
+/* ===================================================================== */
+/*  PRINT — clean, ink-friendly report for the director (Ctrl+P / PDF)   */
+/* ===================================================================== */
+@media print {
+  @page { margin: 14mm 12mm; }
+  html, body { background: #fff !important; }
+  body { color: #14161d !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+  /* Drop everything screen-only: video hero, chrome, floating UI */
+  .hero-video, .hero-overlay, .loadbar, .toast, .fabs, .marquee,
+  .nav-wrap, .hero-clock, .badge, .hero-cta, .livepill, .cta-mini,
+  .hamb, .nav-menu, .hero-video ~ *:empty { display: none !important; }
+
+  /* Flatten the hero so the dashboard tray prints at the top of page 1 */
+  .hero {
+    min-height: 0 !important; height: auto !important; overflow: visible !important;
+    border-radius: 0 !important; background: #fff !important;
+  }
+  .hero-fg, .hero-content { min-height: 0 !important; padding: 0 !important; display: block !important; }
+  .hl, .hl-sub { display: none !important; }
+  .tray-wrap { margin: 0 !important; transform: none !important; }
+  .tray {
+    box-shadow: none !important; border: 1px solid #d9d6cf !important;
+    background: #fff !important; transform: none !important;
+  }
+
+  /* Kill motion + reveals so nothing prints half-faded */
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+
+  .wrap { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  .section { break-inside: avoid; page-break-inside: avoid; }
+  .card, .panel, .dcard, .tick { box-shadow: none !important; border: 1px solid #e2ded7 !important; }
+  a[href]::after { content: ""; } /* no ugly URL expansion */
+  .news-item { break-inside: avoid; }
+  .foot { border-top: 1px solid #e2ded7; margin-top: 10px; }
 }

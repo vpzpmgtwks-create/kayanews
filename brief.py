@@ -166,14 +166,33 @@ def fetch_vix() -> dict:
         r = requests.get(VIX_URL, headers=HEADERS, timeout=12)
         r.raise_for_status()
         result = r.json()["chart"]["result"][0]
+        meta = result.get("meta", {}) or {}
         closes = [c for c in result["indicators"]["quote"][0]["close"] if c is not None]
-        current = round(closes[-1], 2)
-        prev = round(closes[-2], 2) if len(closes) > 1 else current
+        # Live intraday value while the market is open; the last daily close
+        # otherwise. Using regularMarketPrice keeps VIX moving tick-by-tick
+        # instead of freezing on yesterday's close.
+        live = meta.get("regularMarketPrice")
+        current = round(float(live), 2) if live is not None else round(closes[-1], 2)
+        cur_raw = float(live) if live is not None else closes[-1]
+        # Previous *daily* close. NOTE: meta.chartPreviousClose on a 1-month
+        # range is the close from ~a month ago, so we derive yesterday's close
+        # from the daily series: if the last candle is today's (≈ live), take
+        # the one before it; otherwise the last candle already is yesterday.
+        tol = max(0.05, abs(cur_raw) * 0.01)
+        if len(closes) >= 2 and abs(closes[-1] - cur_raw) <= tol:
+            prev = round(closes[-2], 2)
+        elif closes:
+            prev = round(closes[-1], 2)
+        else:
+            prev = current
         change = round(current - prev, 2)
         pct = round((change / prev) * 100, 2) if prev else 0.0
-        month_high = round(max(closes), 2)
-        month_low = round(min(closes), 2)
+        # fold the live tick into the month range + sparkline tail
+        month_high = round(max(max(closes), current), 2)
+        month_low = round(min(min(closes), current), 2)
         history = [round(c, 2) for c in closes[-22:]]  # ~1 trading month
+        if history and abs(history[-1] - current) > 1e-9:
+            history[-1] = current
         ok, err = True, None
     except Exception as e:  # noqa: BLE001
         current = prev = change = pct = month_high = month_low = None
@@ -397,39 +416,93 @@ def _fmt_time(ts: float | None) -> str:
 # --------------------------------------------------------------------------- #
 # Scoring + concise Arabic bottom-line (الزبدة)
 # --------------------------------------------------------------------------- #
-def market_score(vix: dict, news: list[dict], fg_stocks: dict | None = None) -> dict:
+def _vix_score_contrib(v: float) -> float:
+    """Smooth VIX→comfort contribution (~+3 calm … −4 panic).
+
+    Piecewise-linear between anchor points so even a 0.2-point VIX move nudges
+    the overall score — that's what makes the gauge feel live and precise,
+    instead of jumping only when VIX crosses a whole bucket boundary.
+    """
+    pts = [(10, 3.0), (13, 2.5), (15, 2.0), (18, 1.0), (22, 0.0),
+           (27, -1.5), (32, -3.0), (40, -4.0)]
+    if v <= pts[0][0]:
+        return pts[0][1]
+    if v >= pts[-1][0]:
+        return pts[-1][1]
+    for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+        if x0 <= v <= x1:
+            t = (v - x0) / (x1 - x0)
+            return y0 + t * (y1 - y0)
+    return 0.0
+
+
+def news_sentiment_index(news: list[dict]) -> dict:
+    """Continuous market news-sentiment index in [-100, +100].
+
+    Every headline's positive/negative tilt is weighted by how *fresh* it is
+    (exponential decay, ~8-hour half-life) and how *relevant* it is, so the
+    index — and the score built on top of it — shifts precisely as the news
+    flow changes rather than moving in coarse whole-number steps.
+    """
+    now = time.time()
+    num = den = 0.0
+    pos_n = neg_n = 0
+    for n in news[:40]:
+        s = n.get("sentiment", 0)
+        if s > 0:
+            pos_n += 1
+        elif s < 0:
+            neg_n += 1
+        pub = n.get("published")
+        age_h = ((now - pub) / 3600.0) if pub else 12.0
+        recency = 0.5 ** (max(0.0, age_h) / 8.0)
+        relevance = 1.0 + min(4.0, n.get("relevance", 0) / 3.0)
+        w = recency * relevance
+        num += s * w
+        den += w
+    idx = max(-100.0, min(100.0, (num / den) * 33.0)) if den > 0 else 0.0
+    return {"index": round(idx, 1), "pos": pos_n, "neg": neg_n,
+            "count": len(news)}
+
+
+def estimate_mood(vix: dict, news_idx: dict) -> dict:
+    """Fallback stock-mood (0–100) derived from VIX + news sentiment.
+
+    Used only when the live CNN Fear & Greed feed is unreachable, so the
+    "مزاج السوق" gauge is never blank. Flagged with estimated=True.
+    """
+    base = 50.0
+    if vix.get("ok") and vix.get("current") is not None:
+        base += max(-35.0, min(35.0, (20.0 - vix["current"]) * 2.2))
+    if news_idx:
+        base += max(-18.0, min(18.0, news_idx.get("index", 0.0) * 0.18))
+    val = int(max(0, min(100, round(base))))
+    label_ar, color = _fg_arabic(val)
+    return {"ok": True, "value": val, "change": 0, "label_ar": label_ar,
+            "color": color, "estimated": True}
+
+
+def market_score(vix: dict, news_idx: dict,
+                 fg_stocks: dict | None = None) -> dict:
     """A 0–10 market-comfort score. 10 = calm/positive, 0 = fear/negative.
 
-    Blends: VIX level + VIX direction + news sentiment + stock Fear & Greed.
+    Blends a smooth VIX level + VIX direction + a recency-weighted news
+    sentiment index + (when live) the stock Fear & Greed reading. Every input
+    is continuous, so the score tracks the market precisely and keeps moving
+    with each refresh instead of looking frozen.
     """
     score = 5.0
     v = vix.get("current")
     if vix.get("ok") and v is not None:
-        if v < 13:
-            score += 3
-        elif v < 15:
-            score += 2
-        elif v < 18:
-            score += 1
-        elif v < 22:
-            score += 0
-        elif v < 27:
-            score -= 1.5
-        elif v < 32:
-            score -= 3
-        else:
-            score -= 4
+        score += _vix_score_contrib(v)
         ch = vix.get("change") or 0
-        if ch <= -1:
-            score += 0.5
-        elif ch >= 1:
-            score -= 0.5
+        score += max(-0.6, min(0.6, -ch * 0.25))    # rising VIX = less comfort
 
-    net = sum(n["sentiment"] for n in news[:15])
-    score += max(-2.5, min(2.5, net * 0.4))
+    ni = news_idx.get("index", 0.0) if news_idx else 0.0
+    score += max(-2.5, min(2.5, ni / 40.0))         # news tilt, continuous
 
-    # Stock Fear & Greed nudge: greed lifts comfort, fear lowers it (±1)
-    if fg_stocks and fg_stocks.get("ok"):
+    # live stock Fear & Greed nudge (skip our own estimate to avoid double-count)
+    if fg_stocks and fg_stocks.get("ok") and not fg_stocks.get("estimated"):
         score += max(-1.0, min(1.0, (fg_stocks["value"] - 50) / 50.0))
 
     score = round(max(0.0, min(10.0, score)), 1)
@@ -441,8 +514,8 @@ def market_score(vix: dict, news: list[dict], fg_stocks: dict | None = None) -> 
     else:
         label_ar, label_en, color = "سلبي / خطر مرتفع", "Risky", "#dc2626"
 
-    return {"score": score, "net": net, "label_ar": label_ar,
-            "label_en": label_en, "color": color}
+    return {"score": score, "net": ni, "news_index": ni,
+            "label_ar": label_ar, "label_en": label_en, "color": color}
 
 
 def _title_ar(n: dict) -> str:
@@ -600,7 +673,11 @@ def build_report(force: bool = False) -> dict:
     for j, n in enumerate(mk):
         n["title_ar"] = tr[len(geo) + j]
 
-    score = market_score(vix, news, fg_stocks)
+    news_idx = news_sentiment_index(news)
+    # keep the "مزاج السوق" gauge populated even if the live CNN feed is down
+    if not fg_stocks.get("ok"):
+        fg_stocks = estimate_mood(vix, news_idx)
+    score = market_score(vix, news_idx, fg_stocks)
     whale = whale_signal(quotes, stablecoins)
     points = key_points(vix, score, geo, mk, fg_crypto, fg_stocks, whale)
     line = bottom_line(score)
@@ -619,6 +696,7 @@ def build_report(force: bool = False) -> dict:
         "news_count": len(news),
         "fear_greed_crypto": fg_crypto,
         "fear_greed_stocks": fg_stocks,
+        "news_sentiment": news_idx,
         "stablecoins": stablecoins,
         "whale_signal": whale,
     }

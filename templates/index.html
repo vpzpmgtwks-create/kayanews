@@ -78,14 +78,20 @@
           <a href="/history">السجل اليومي</a>
           {% if not is_static %}
           <a href="/?refresh=1">تحديث الآن</a>
-          <a href="/logout">خروج</a>
           {% endif %}
+          <a href="#" onclick="window.print();return false;">🖨️ طباعة التقرير</a>
         </div>
       </div>
 
       <!-- Hero content -->
       <div class="hero-content">
         <span class="badge"><span class="badge-dot"></span> نشرة السوق · تحديث لحظي</span>
+        <div class="hero-clock" id="hero-clock">
+          <svg class="hc-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+          <span class="hc-time" id="hc-time">—</span>
+          <span class="hc-sep"></span>
+          <span class="hc-date" id="hc-date">—</span>
+        </div>
         <h1 class="hl">
           نبض <span class="hl-em">السوق العالمي</span><br>
           بين يديك لحظة بلحظة
@@ -124,6 +130,7 @@
                 <div class="dc-top"><span class="dc-key">التقييم العام</span><span class="dc-sub">من ١٠</span></div>
                 <div class="dc-head">
                   <span class="dc-state" id="hv-score-lbl">—</span>
+                  <span class="pill np-pill" id="hv-news-pill"></span>
                 </div>
                 <div class="gauge">
                   <svg id="g-score" viewBox="0 0 200 120" preserveAspectRatio="xMidYMid meet"></svg>
@@ -151,6 +158,11 @@
 
     </div>
   </section>
+
+  <!-- ===== Live ticker tape ===== -->
+  <div class="marquee" id="marquee" aria-label="شريط الأسعار اللحظية">
+    <div class="marquee-track" id="marquee-track"></div>
+  </div>
 
   <!-- ================= FULL REPORT ================= -->
   <div class="wrap" id="full">
@@ -216,9 +228,14 @@
   </div>
 </div>
 
-<button class="totop" id="totop" aria-label="العودة إلى الأعلى" title="أعلى الصفحة">
-  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
-</button>
+<div class="fabs">
+  <button class="fab fab-print" id="fab-print" aria-label="طباعة التقرير" title="طباعة / حفظ PDF">
+    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  </button>
+  <button class="fab totop" id="totop" aria-label="العودة إلى الأعلى" title="أعلى الصفحة">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+  </button>
+</div>
 
 <script>
   window.MB_REPORT = {{ r | tojson }};
