@@ -297,6 +297,34 @@
     el.innerHTML = row + row;
   }
 
+  // ---- sector rotation bars (best -> worst) ----------------------------
+  // Bar width is proportional to |daily %| vs. the strongest mover, so the
+  // spread between leaders and laggards is read at a glance.
+  function renderSectors(sectors) {
+    var el = $("sectors");
+    if (!el) return;
+    var list = (sectors || []).filter(function (s) { return s && s.ok; });
+    if (!list.length) {
+      el.innerHTML = '<div class="sec-empty">تعذّر تحميل بيانات القطاعات</div>';
+      return;
+    }
+    var maxAbs = list.reduce(function (m, s) {
+      return Math.max(m, Math.abs(s.change_pct || 0));
+    }, 0.1);
+    el.innerHTML = list.map(function (s, i) {
+      var up = (s.change_pct || 0) >= 0;
+      var cls = up ? "up" : "down", ar = up ? "▲" : "▼";
+      var w = Math.max(4, Math.min(100, Math.abs(s.change_pct || 0) / maxAbs * 100));
+      var delay = (0.04 * i).toFixed(2);
+      return '<div class="sector">' +
+        '<div class="sec-name">' + esc(s.name) + '</div>' +
+        '<div class="sec-track"><span class="sec-bar ' + cls + '" ' +
+          'style="width:' + w.toFixed(1) + '%;animation-delay:' + delay + 's"></span></div>' +
+        '<div class="sec-pct ' + cls + '">' + ar + ' ' + signed(s.change_pct, 2) + '%</div>' +
+      '</div>';
+    }).join("");
+  }
+
   function sentiCard(name, obj, isStable) {
     if (!obj || !obj.ok) return '<div class="card"><div class="s-name">' + esc(name) +
       '</div><div class="s-val">—</div><div class="s-lbl">غير متوفر</div></div>';
@@ -384,6 +412,7 @@
     renderMood(r.fear_greed_stocks, initial);
     renderTickers(r.quotes);
     renderMarquee(r.quotes);
+    renderSectors(r.sectors);
     renderSentiment(r);
     renderDigest(r);
     renderNews(r);

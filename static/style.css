@@ -228,7 +228,8 @@ a { color: inherit; text-decoration: none; }
 /* Live clock chip — calm, glassy, sits under the badge */
 .hero-clock {
   margin-top: 12px;
-  display: inline-flex; align-items: center; gap: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  flex-wrap: wrap; gap: 6px 9px; max-width: 100%;
   padding: 6px 14px; border-radius: 999px;
   background: rgba(255,255,255,.62); backdrop-filter: blur(6px);
   border: 1px solid rgba(255,255,255,.75);
@@ -422,10 +423,49 @@ a { color: inherit; text-decoration: none; }
   transition: transform .22s var(--ease), box-shadow .22s, border-color .22s;
 }
 .tick:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--line-2); }
-.tick .t-name { font-size: 13px; color: var(--ink-3); font-weight: 700; }
-.tick .t-price { font-size: 21px; font-weight: 800; margin: 4px 0 2px; font-family: "Amiri", serif; }
+.tick { min-width: 0; }
+.tick .t-name { font-size: 13px; color: var(--ink-3); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tick .t-price { font-size: 21px; font-weight: 800; margin: 4px 0 2px; font-family: "Amiri", serif; font-variant-numeric: tabular-nums; }
 .tick .t-chg { font-size: 13.5px; font-weight: 800; }
 .up { color: var(--up); } .down { color: var(--down); }
+
+/* ---- Sector rotation ---- */
+.sectors { display: flex; flex-direction: column; gap: 9px; }
+.sector { display: grid; grid-template-columns: 118px 1fr 76px; align-items: center; gap: 12px; }
+.sec-name {
+  font-size: 13.5px; font-weight: 700; color: var(--ink-2); text-align: right;
+  white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+.sec-track {
+  position: relative; height: 15px; border-radius: 8px;
+  background: var(--surface-2); border: 1px solid var(--line); overflow: hidden;
+}
+.sec-bar {
+  display: block; height: 100%; border-radius: 8px;
+  transform-origin: right center; animation: secBar .8s var(--ease-out) both;
+}
+.sec-bar.up   { background: linear-gradient(90deg,#0f9d63,#12885a); }
+.sec-bar.down { background: linear-gradient(90deg,#e0574c,#d1443a); }
+.sec-pct {
+  font-size: 13px; font-weight: 800; font-family: "Amiri", serif;
+  font-variant-numeric: tabular-nums; text-align: left; white-space: nowrap;
+}
+.sec-pct.up { color: var(--up); } .sec-pct.down { color: var(--down); }
+.sec-empty { padding: 18px; text-align: center; color: var(--ink-3); font-weight: 700; }
+.sec-cap { margin-top: 14px; font-size: 12.5px; color: var(--ink-3); text-align: center; }
+@keyframes secBar { from { transform: scaleX(0); opacity: .45; } to { transform: scaleX(1); opacity: 1; } }
+
+/* ---- Live TradingView fear section ---- */
+.tv-fear { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.tv-box {
+  border: 1px solid var(--line); border-radius: var(--radius-s);
+  overflow: hidden; background: #fff;
+}
+.tv-strip { min-height: 200px; }
+.tv-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tv-duo .tv-box { height: 360px; }
+.tv-box .tradingview-widget-container,
+.tv-box .tradingview-widget-container__widget { height: 100%; width: 100%; }
 
 /* ---- VIX month panel ---- */
 .vixpanel { padding: 20px; }
@@ -656,10 +696,23 @@ table.hist tbody tr:nth-child(n+6) { animation-delay: .52s; }
   .news-cols { grid-template-columns: 1fr; }
   .tickers { grid-template-columns: repeat(3, 1fr); }
   .senti { grid-template-columns: 1fr; }
+  .tv-duo { grid-template-columns: 1fr; }
+  .tv-duo .tv-box { height: 320px; }
 }
 @media (max-width: 560px) {
   .tickers { grid-template-columns: repeat(2, 1fr); }
   .vix-stats { grid-template-columns: 1fr; }
+  .wrap { padding: 30px 14px 64px; }
+  .panel, .card { padding: 18px; }
+  .tv-fear { padding: 12px; }
+  .sector { grid-template-columns: 108px 1fr 56px; gap: 8px; }
+  .sec-name { font-size: 12px; }
+  .sec-pct { font-size: 11.5px; }
+  .sec-cap, .tv-cap { font-size: 11.5px; }
+}
+@media (max-width: 380px) {
+  .tickers { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tick { padding: 12px; }
 }
 
 /* Freeze one-shot entrances when the tab is hidden (background/headless idle) */
@@ -686,7 +739,7 @@ body.still *::after { animation: none !important; }
   /* Drop everything screen-only: video hero, chrome, floating UI */
   .hero-video, .hero-overlay, .loadbar, .toast, .fabs, .marquee,
   .nav-wrap, .hero-clock, .badge, .hero-cta, .livepill, .cta-mini,
-  .hamb, .nav-menu, .hero-video ~ *:empty { display: none !important; }
+  .hamb, .nav-menu, .tv-live-sec, .hero-video ~ *:empty { display: none !important; }
 
   /* Flatten the hero so the dashboard tray prints at the top of page 1 */
   .hero {

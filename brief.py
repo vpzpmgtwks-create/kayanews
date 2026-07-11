@@ -56,8 +56,25 @@ MARKET_TICKERS = [
     ("النفط WTI", "CL=F", 2),
     ("S&P 500", "%5EGSPC", 2),
     ("ناسداك", "%5EIXIC", 2),
+    ("داو جونز", "%5EDJI", 0),
     ("بيتكوين", "BTC-USD", 0),
     ("مؤشر الدولار", "DX-Y.NYB", 2),
+    ("عائد ١٠ سنوات", "%5ETNX", 2),
+]
+
+# US sector ETFs (SPDR) — one-day performance = market breadth at a glance
+SECTOR_TICKERS = [
+    ("التكنولوجيا", "XLK"),
+    ("المالية", "XLF"),
+    ("الرعاية الصحية", "XLV"),
+    ("الطاقة", "XLE"),
+    ("الاستهلاك التقديري", "XLY"),
+    ("السلع الاستهلاكية", "XLP"),
+    ("الصناعات", "XLI"),
+    ("المواد", "XLB"),
+    ("المرافق", "XLU"),
+    ("العقارات", "XLRE"),
+    ("الاتصالات", "XLC"),
 ]
 
 # --------------------------------------------------------------------------- #
@@ -255,6 +272,19 @@ def _fetch_quote(name: str, symbol: str, decimals: int) -> dict:
 def fetch_markets() -> list[dict]:
     with ThreadPoolExecutor(max_workers=6) as ex:
         return list(ex.map(lambda a: _fetch_quote(*a), MARKET_TICKERS))
+
+
+def fetch_sectors() -> list[dict]:
+    """Live S&P 500 sector performance via the 11 SPDR sector ETFs.
+
+    Returns only the tickers that resolved, sorted best-to-worst by daily %.
+    Lets the report show sector rotation (risk-on vs. defensive) at a glance.
+    """
+    with ThreadPoolExecutor(max_workers=len(SECTOR_TICKERS)) as ex:
+        rows = list(ex.map(lambda a: _fetch_quote(a[0], a[1], 2), SECTOR_TICKERS))
+    ok = [r for r in rows if r.get("ok")]
+    ok.sort(key=lambda r: r.get("change_pct", 0.0), reverse=True)
+    return ok
 
 
 # --------------------------------------------------------------------------- #
@@ -648,15 +678,17 @@ def build_report(force: bool = False) -> dict:
         return _CACHE["data"]
 
     # run all independent network fetches concurrently
-    with ThreadPoolExecutor(max_workers=6) as ex:
+    with ThreadPoolExecutor(max_workers=7) as ex:
         f_vix = ex.submit(fetch_vix)
         f_quotes = ex.submit(fetch_markets)
+        f_sectors = ex.submit(fetch_sectors)
         f_news = ex.submit(fetch_news)
         f_fgc = ex.submit(fetch_fear_greed_crypto)
         f_fgs = ex.submit(fetch_fear_greed_stocks)
         f_stable = ex.submit(fetch_stablecoins)
         vix = f_vix.result()
         quotes = f_quotes.result()
+        sectors = f_sectors.result()
         news = f_news.result()
         fg_crypto = f_fgc.result()
         fg_stocks = f_fgs.result()
@@ -688,6 +720,7 @@ def build_report(force: bool = False) -> dict:
         "generated_ts": int(datetime.now(timezone.utc).timestamp()),
         "vix": vix,
         "quotes": quotes,
+        "sectors": sectors,
         "score": score,
         "points": points,
         "bottom_line": line,
