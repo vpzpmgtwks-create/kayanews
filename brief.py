@@ -1,0 +1,634 @@
+"""
+Market Brief engine — 100% free, no API keys.
+
+- Geopolitical + economic news via free RSS, condensed and auto-translated to
+  concise Arabic (free Google endpoint via deep-translator).
+- VIX index + live key market quotes (gold, oil, S&P 500, Nasdaq, Bitcoin,
+  US dollar) via Yahoo Finance chart API (no key).
+- A market score out of 10 and a concise Arabic bottom-line (الزبدة).
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+from html import unescape
+
+import feedparser
+import requests
+
+# --------------------------------------------------------------------------- #
+# Sources (all free, no API key required)
+# --------------------------------------------------------------------------- #
+NEWS_FEEDS = [
+    ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml", "geopolitics"),
+    ("BBC World", "https://feeds.bbci.co.uk/news/world/rss.xml", "geopolitics"),
+    # Analyst/macro blogs from the user's source list (free RSS, no key)
+    ("ZeroHedge", "https://feeds.feedburner.com/zerohedge/feed", "geopolitics"),
+    ("BBC Business", "https://feeds.bbci.co.uk/news/business/rss.xml", "markets"),
+    ("CNBC Markets", "https://www.cnbc.com/id/100003114/device/rss/rss.html", "markets"),
+    ("CNBC Economy", "https://www.cnbc.com/id/20910258/device/rss/rss.html", "markets"),
+    ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories", "markets"),
+    ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex", "markets"),
+    ("Lyn Alden", "https://www.lynalden.com/feed/", "markets"),
+]
+
+VIX_URL = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1mo"
+QUOTE_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=5d"
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MarketBrief/1.0"}
+# Some endpoints (CNN) require a full browser UA
+BROWSER_HEADERS = {"User-Agent": (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/122.0 Safari/537.36")}
+
+# Free sentiment / on-chain sources (no API key)
+CRYPTO_FG_URL = "https://api.alternative.me/fng/?limit=2"
+CNN_FG_URL = "https://production.dataviz.cnn.io/index/fearandgreed/graphdata"
+STABLECOINS_URL = "https://stablecoins.llama.fi/stablecoincharts/all"
+
+# Live market quotes shown in the top strip (name_ar, yahoo symbol, decimals)
+MARKET_TICKERS = [
+    ("الذهب", "GC=F", 1),
+    ("النفط WTI", "CL=F", 2),
+    ("S&P 500", "%5EGSPC", 2),
+    ("ناسداك", "%5EIXIC", 2),
+    ("بيتكوين", "BTC-USD", 0),
+    ("مؤشر الدولار", "DX-Y.NYB", 2),
+]
+
+# --------------------------------------------------------------------------- #
+# Keyword dictionaries for relevance + lightweight sentiment
+# --------------------------------------------------------------------------- #
+GEO_KEYWORDS = [
+    "war", "conflict", "invasion", "sanction", "military", "missile", "strike",
+    "ceasefire", "troops", "nuclear", "tension", "border", "coup", "protest",
+    "terror", "attack", "hostage", "embargo", "opec", "oil", "gas", "pipeline",
+    "russia", "ukraine", "israel", "gaza", "iran", "china", "taiwan",
+    "north korea", "red sea", "houthi", "hormuz", "middle east", "nato",
+    "election", "airstrike", "drone",
+]
+FIN_KEYWORDS = [
+    "fed", "federal reserve", "interest rate", "rate cut", "rate hike",
+    "inflation", "cpi", "ppi", "gdp", "recession", "jobs", "unemployment",
+    "earnings", "stocks", "bond", "yield", "dollar", "treasury", "market",
+    "nasdaq", "s&p", "dow", "ecb", "boj", "tariff", "crude", "gold",
+    "bitcoin", "crypto", "central bank", "selloff", "rally", "wall street",
+]
+NEG_KEYWORDS = [
+    "war", "invasion", "attack", "strike", "missile", "sanction", "crash",
+    "plunge", "slump", "fear", "recession", "escalation", "conflict",
+    "tension", "selloff", "default", "downgrade", "layoff", "hike", "embargo",
+    "shutdown", "surge in inflation", "tumble", "fall", "drop", "warns",
+    "crisis", "threat", "airstrike",
+]
+POS_KEYWORDS = [
+    "ceasefire", "deal", "agreement", "truce", "rate cut", "easing", "rally",
+    "surge", "gains", "recovery", "growth", "stimulus", "peace", "resolution",
+    "beats", "upgrade", "rebound", "record high", "optimism", "boost",
+]
+
+# in-memory caches
+_CACHE: dict = {"ts": 0, "data": None}
+_CACHE_TTL = 90  # seconds — page/API auto-refresh every minute
+_TR_CACHE: dict = {}  # english title -> arabic (per-process)
+
+# Persistent daily history (site records)
+HERE = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(HERE, "data")
+HISTORY_PATH = os.path.join(DATA_DIR, "history.json")
+_HISTORY_LOCK = threading.Lock()
+_HISTORY_MAX = 120  # keep ~4 months of daily snapshots
+
+
+def _count_matches(text: str, keywords: list[str]) -> list[str]:
+    return [kw for kw in keywords if kw in text]
+
+
+def _clean(text: str) -> str:
+    text = unescape(text or "")
+    text = re.sub(r"<[^>]+>", "", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+# --------------------------------------------------------------------------- #
+# Free Arabic translation (Google endpoint, no key)
+# --------------------------------------------------------------------------- #
+GT_URL = "https://translate.googleapis.com/translate_a/single"
+
+
+def _translate_one(text: str) -> str:
+    """Translate to Arabic via Google's free endpoint, with an explicit timeout.
+
+    We call the endpoint directly (instead of deep_translator) so every network
+    read in the pipeline is time-bounded — deep_translator sets no timeout and a
+    single throttled request could otherwise hang the whole page indefinitely.
+    """
+    try:
+        params = {"client": "gtx", "sl": "auto", "tl": "ar", "dt": "t", "q": text}
+        r = requests.get(GT_URL, params=params, headers=HEADERS, timeout=8)
+        r.raise_for_status()
+        segments = r.json()[0] or []
+        out = "".join(seg[0] for seg in segments if seg and seg[0])
+        return out or text
+    except Exception:  # noqa: BLE001
+        return text  # fallback to original English
+
+
+def _translate_batch(texts: list[str]) -> list[str]:
+    """Translate English headlines to concise Arabic, in parallel. Cached
+    per-text; falls back to the original text if the endpoint is unavailable."""
+    out: list[str] = [""] * len(texts)
+    todo = [(i, t) for i, t in enumerate(texts) if t and t not in _TR_CACHE]
+    for i, t in enumerate(texts):
+        if not t:
+            out[i] = ""
+        elif t in _TR_CACHE:
+            out[i] = _TR_CACHE[t]
+
+    if todo:
+        with ThreadPoolExecutor(max_workers=8) as ex:
+            results = list(ex.map(lambda p: _translate_one(p[1]), todo))
+        for (i, t), val in zip(todo, results):
+            _TR_CACHE[t] = val
+            out[i] = val
+    return out
+
+
+# --------------------------------------------------------------------------- #
+# VIX
+# --------------------------------------------------------------------------- #
+def fetch_vix() -> dict:
+    try:
+        r = requests.get(VIX_URL, headers=HEADERS, timeout=12)
+        r.raise_for_status()
+        result = r.json()["chart"]["result"][0]
+        closes = [c for c in result["indicators"]["quote"][0]["close"] if c is not None]
+        current = round(closes[-1], 2)
+        prev = round(closes[-2], 2) if len(closes) > 1 else current
+        change = round(current - prev, 2)
+        pct = round((change / prev) * 100, 2) if prev else 0.0
+        month_high = round(max(closes), 2)
+        month_low = round(min(closes), 2)
+        history = [round(c, 2) for c in closes[-22:]]  # ~1 trading month
+        ok, err = True, None
+    except Exception as e:  # noqa: BLE001
+        current = prev = change = pct = month_high = month_low = None
+        history = []
+        ok, err = False, str(e)
+
+    level, label_en, label_ar, color = _vix_interpretation(current)
+    return {
+        "ok": ok, "error": err, "current": current, "prev_close": prev,
+        "change": change, "change_pct": pct, "month_high": month_high,
+        "month_low": month_low, "level": level, "label_en": label_en,
+        "label_ar": label_ar, "color": color, "history": history,
+    }
+
+
+def _vix_interpretation(v):
+    if v is None:
+        return ("unknown", "Unknown", "غير متوفر", "#888")
+    if v < 15:
+        return ("calm", "Calm", "هدوء واطمئنان", "#16a34a")
+    if v < 20:
+        return ("normal", "Normal", "تقلّب طبيعي", "#65a30d")
+    if v < 30:
+        return ("elevated", "Elevated", "قلق وتوتر مرتفع", "#f59e0b")
+    return ("fear", "High Fear", "خوف شديد", "#dc2626")
+
+
+# --------------------------------------------------------------------------- #
+# Live market quotes (gold, oil, indices, bitcoin, dollar)
+# --------------------------------------------------------------------------- #
+def _fetch_quote(name: str, symbol: str, decimals: int) -> dict:
+    try:
+        url = QUOTE_URL.format(sym=symbol)
+        r = requests.get(url, headers=HEADERS, timeout=8)
+        r.raise_for_status()
+        res = r.json()["chart"]["result"][0]
+        meta = res.get("meta", {}) or {}
+        closes = [c for c in res["indicators"]["quote"][0]["close"] if c is not None]
+        price = meta.get("regularMarketPrice")
+        if price is None and closes:
+            price = closes[-1]
+        prev = meta.get("chartPreviousClose")
+        if prev is None and len(closes) > 1:
+            prev = closes[-2]
+        price = float(price)
+        prev = float(prev) if prev else price
+        change = price - prev
+        pct = (change / prev) * 100 if prev else 0.0
+        return {
+            "name": name, "ok": True,
+            "price": round(price, decimals),
+            "change": round(change, decimals),
+            "change_pct": round(pct, 2),
+            "up": change >= 0,
+        }
+    except Exception as e:  # noqa: BLE001
+        return {"name": name, "ok": False, "error": str(e)}
+
+
+def fetch_markets() -> list[dict]:
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        return list(ex.map(lambda a: _fetch_quote(*a), MARKET_TICKERS))
+
+
+# --------------------------------------------------------------------------- #
+# Free market-sentiment gauges (Fear & Greed) + on-chain stablecoin reserve
+# --------------------------------------------------------------------------- #
+def _fg_arabic(value):
+    """Map a 0–100 Fear & Greed value to an Arabic label + color."""
+    if value is None:
+        return ("غير متوفر", "#888")
+    if value < 25:
+        return ("خوف شديد", "#dc2626")
+    if value < 45:
+        return ("خوف", "#f59e0b")
+    if value < 55:
+        return ("محايد", "#d97706")
+    if value < 75:
+        return ("طمع", "#65a30d")
+    return ("طمع شديد", "#16a34a")
+
+
+def fetch_fear_greed_crypto() -> dict:
+    """Crypto Fear & Greed index (alternative.me, free)."""
+    try:
+        r = requests.get(CRYPTO_FG_URL, headers=HEADERS, timeout=10)
+        r.raise_for_status()
+        data = r.json()["data"]
+        val = int(data[0]["value"])
+        prev = int(data[1]["value"]) if len(data) > 1 else val
+        label_ar, color = _fg_arabic(val)
+        return {"ok": True, "value": val, "change": val - prev,
+                "label_ar": label_ar, "color": color}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
+
+
+def fetch_fear_greed_stocks() -> dict:
+    """CNN stock-market Fear & Greed index (free JSON, needs browser UA)."""
+    try:
+        r = requests.get(CNN_FG_URL, headers=BROWSER_HEADERS, timeout=10)
+        r.raise_for_status()
+        fg = r.json()["fear_and_greed"]
+        val = round(float(fg["score"]), 1)
+        prev = float(fg.get("previous_close", val) or val)
+        label_ar, color = _fg_arabic(val)
+        return {"ok": True, "value": val, "change": round(val - prev, 1),
+                "label_ar": label_ar, "color": color}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
+
+
+def fetch_stablecoins() -> dict:
+    """Total stablecoin supply + weekly trend (DeFiLlama, free).
+
+    Rising stablecoin reserves = dry powder building on the sidelines
+    (potential whale accumulation), per the user's on-chain rule.
+    """
+    def _val(point):
+        v = point.get("totalCirculatingUSD")
+        if isinstance(v, dict):
+            return sum(float(x) for x in v.values())
+        return float(v)
+
+    try:
+        r = requests.get(STABLECOINS_URL, headers=HEADERS, timeout=15)
+        r.raise_for_status()
+        series = r.json()
+        last = _val(series[-1])
+        week = _val(series[-8]) if len(series) > 8 else _val(series[0])
+        change_pct = ((last - week) / week * 100) if week else 0.0
+        return {"ok": True, "total_b": round(last / 1e9, 1),
+                "change_pct": round(change_pct, 2), "rising": last >= week}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": str(e)}
+
+
+# --------------------------------------------------------------------------- #
+# News
+# --------------------------------------------------------------------------- #
+def _parse_feed(url: str):
+    """Download the feed with an explicit timeout via requests, then hand the
+    bytes to feedparser. feedparser's own fetch has no timeout and can hang the
+    whole request if a single RSS host stalls, so we never let it fetch."""
+    try:
+        r = requests.get(url, headers=BROWSER_HEADERS, timeout=(5, 12))
+        r.raise_for_status()
+        return feedparser.parse(r.content)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def fetch_news() -> list[dict]:
+    items: list[dict] = []
+    seen_titles: set[str] = set()
+
+    # download all feeds in parallel, then process them in declared order
+    with ThreadPoolExecutor(max_workers=len(NEWS_FEEDS)) as ex:
+        feeds = list(ex.map(lambda f: _parse_feed(f[1]), NEWS_FEEDS))
+
+    for (source, url, category), feed in zip(NEWS_FEEDS, feeds):
+        if feed is None:
+            continue
+
+        for entry in feed.entries[:25]:
+            title = _clean(entry.get("title", ""))
+            if not title or title.lower() in seen_titles:
+                continue
+            seen_titles.add(title.lower())
+
+            summary = _clean(entry.get("summary", entry.get("description", "")))
+            link = entry.get("link", "")
+            published = _parse_time(entry)
+            text = (title + " " + summary).lower()
+
+            geo_hits = _count_matches(text, GEO_KEYWORDS)
+            fin_hits = _count_matches(text, FIN_KEYWORDS)
+            neg_hits = _count_matches(text, NEG_KEYWORDS)
+            pos_hits = _count_matches(text, POS_KEYWORDS)
+
+            relevance = len(geo_hits) * 2 + len(fin_hits) * 2
+            if category == "markets":
+                relevance += 1
+            if relevance == 0:
+                continue
+
+            items.append({
+                "title": title,
+                "title_ar": "",  # filled later (only for displayed items)
+                "link": link,
+                "source": source,
+                "category": category,
+                "published": published,
+                "published_str": _fmt_time(published),
+                "relevance": relevance,
+                "sentiment": len(pos_hits) - len(neg_hits),
+                "tags": sorted(set(geo_hits + fin_hits))[:5],
+            })
+
+    items.sort(key=lambda x: (x["relevance"], x["published"] or 0), reverse=True)
+    return items
+
+
+def _parse_time(entry) -> float | None:
+    for key in ("published_parsed", "updated_parsed"):
+        t = entry.get(key)
+        if t:
+            try:
+                return time.mktime(t)
+            except Exception:  # noqa: BLE001
+                pass
+    return None
+
+
+def _fmt_time(ts: float | None) -> str:
+    if not ts:
+        return ""
+    return datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+
+
+# --------------------------------------------------------------------------- #
+# Scoring + concise Arabic bottom-line (الزبدة)
+# --------------------------------------------------------------------------- #
+def market_score(vix: dict, news: list[dict], fg_stocks: dict | None = None) -> dict:
+    """A 0–10 market-comfort score. 10 = calm/positive, 0 = fear/negative.
+
+    Blends: VIX level + VIX direction + news sentiment + stock Fear & Greed.
+    """
+    score = 5.0
+    v = vix.get("current")
+    if vix.get("ok") and v is not None:
+        if v < 13:
+            score += 3
+        elif v < 15:
+            score += 2
+        elif v < 18:
+            score += 1
+        elif v < 22:
+            score += 0
+        elif v < 27:
+            score -= 1.5
+        elif v < 32:
+            score -= 3
+        else:
+            score -= 4
+        ch = vix.get("change") or 0
+        if ch <= -1:
+            score += 0.5
+        elif ch >= 1:
+            score -= 0.5
+
+    net = sum(n["sentiment"] for n in news[:15])
+    score += max(-2.5, min(2.5, net * 0.4))
+
+    # Stock Fear & Greed nudge: greed lifts comfort, fear lowers it (±1)
+    if fg_stocks and fg_stocks.get("ok"):
+        score += max(-1.0, min(1.0, (fg_stocks["value"] - 50) / 50.0))
+
+    score = round(max(0.0, min(10.0, score)), 1)
+
+    if score >= 7:
+        label_ar, label_en, color = "إيجابي / مطمئن", "Positive", "#16a34a"
+    elif score >= 4:
+        label_ar, label_en, color = "حذر / محايد", "Cautious", "#d97706"
+    else:
+        label_ar, label_en, color = "سلبي / خطر مرتفع", "Risky", "#dc2626"
+
+    return {"score": score, "net": net, "label_ar": label_ar,
+            "label_en": label_en, "color": color}
+
+
+def _title_ar(n: dict) -> str:
+    return n.get("title_ar") or n.get("title") or ""
+
+
+def key_points(vix: dict, score: dict, geo: list[dict], mk: list[dict],
+               fg_c: dict | None = None, fg_s: dict | None = None,
+               whale: str | None = None) -> list[str]:
+    pts = []
+    if vix.get("ok"):
+        arrow = "مرتفع" if (vix["change"] or 0) > 0 else "منخفض" if (vix["change"] or 0) < 0 else "مستقر"
+        pts.append(f"مؤشر الخوف VIX عند {vix['current']} ({vix['label_ar']})، واتجاهه {arrow} اليوم.")
+    pts.append(f"تقييم السوق العام اليوم: {score['score']} من 10 — {score['label_ar']}.")
+    if fg_s and fg_s.get("ok"):
+        pts.append(f"مزاج سوق الأسهم (الخوف/الطمع): {fg_s['value']} — {fg_s['label_ar']}.")
+    if fg_c and fg_c.get("ok"):
+        pts.append(f"مزاج الكريبتو (الخوف/الطمع): {fg_c['value']} — {fg_c['label_ar']}.")
+    if whale:
+        pts.append(whale)
+    if geo:
+        pts.append("أهم حدث سياسي: " + _title_ar(geo[0]))
+    if mk:
+        pts.append("أهم خبر اقتصادي: " + _title_ar(mk[0]))
+    return pts
+
+
+def whale_signal(quotes: list[dict], stable: dict | None) -> str | None:
+    """Implements the user's on-chain rule combining BTC direction with the
+    stablecoin reserve trend."""
+    if not stable or not stable.get("ok"):
+        return None
+    btc = next((q for q in quotes
+                if q.get("name") == "بيتكوين" and q.get("ok")), None)
+    if not btc:
+        return None
+    if not btc["up"] and stable["rising"]:
+        return ("🐋 إشارة: بيتكوين نازل + احتياطي العملات المستقرة يرتفع "
+                f"({stable['change_pct']:+.1f}% بالأسبوع) — عادةً الحيتان عم "
+                "يجهّزوا للشراء (سيولة جاهزة على الهامش).")
+    if btc["up"] and not stable["rising"]:
+        return ("⚠️ إشارة: بيتكوين طالع + احتياطي العملات المستقرة ينخفض "
+                f"({stable['change_pct']:+.1f}% بالأسبوع) — السيولة عم تُستهلك، "
+                "انتبه لاحتمال تباطؤ الزخم.")
+    return None
+
+
+def bottom_line(score: dict) -> str:
+    if score["score"] >= 7:
+        return ("الزبدة: الأجواء إيجابية نسبياً وشهية المخاطرة مرتفعة — يمكن للأصول "
+                "عالية المخاطر أن تؤدّي جيداً، مع مراقبة أي تصعيد مفاجئ.")
+    if score["score"] >= 4:
+        return ("الزبدة: إشارات مختلطة والسوق في وضع حذر — يُفضّل الترقّب ومتابعة "
+                "بيانات التضخّم والفائدة قبل اتخاذ مواقف كبيرة.")
+    return ("الزبدة: بيئة متوترة وميل واضح للنفور من المخاطرة — عادةً يتّجه "
+            "المستثمرون نحو الأصول الآمنة (الذهب، السندات، الدولار).")
+
+
+# --------------------------------------------------------------------------- #
+# Persistent daily history (saved in the site's records)
+# --------------------------------------------------------------------------- #
+def get_history() -> list[dict]:
+    """Return saved daily snapshots, newest first."""
+    try:
+        with open(HISTORY_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, list):
+            return sorted(data, key=lambda d: d.get("date", ""), reverse=True)
+    except Exception:  # noqa: BLE001
+        pass
+    return []
+
+
+def record_history(report: dict) -> None:
+    """Upsert today's snapshot into data/history.json (one row per day).
+
+    Keeps a compact summary — not the full news payload — so the history file
+    stays small while giving us a daily record + VIX/score table.
+    """
+    date = report.get("generated_date")
+    if not date:
+        return
+    vix = report.get("vix") or {}
+    score = report.get("score") or {}
+    fg_s = report.get("fear_greed_stocks") or {}
+    fg_c = report.get("fear_greed_crypto") or {}
+    snapshot = {
+        "date": date,
+        "updated_at": report.get("generated_at"),
+        "vix": vix.get("current"),
+        "vix_label_ar": vix.get("label_ar"),
+        "vix_color": vix.get("color"),
+        "vix_change": vix.get("change"),
+        "score": score.get("score"),
+        "score_label_ar": score.get("label_ar"),
+        "score_color": score.get("color"),
+        "fg_stocks": fg_s.get("value") if fg_s.get("ok") else None,
+        "fg_crypto": fg_c.get("value") if fg_c.get("ok") else None,
+        "bottom_line": report.get("bottom_line"),
+        "news_count": report.get("news_count"),
+    }
+    with _HISTORY_LOCK:
+        try:
+            os.makedirs(DATA_DIR, exist_ok=True)
+            try:
+                with open(HISTORY_PATH, encoding="utf-8") as f:
+                    rows = json.load(f)
+                    if not isinstance(rows, list):
+                        rows = []
+            except Exception:  # noqa: BLE001
+                rows = []
+            rows = [r for r in rows if r.get("date") != date]
+            rows.append(snapshot)
+            rows.sort(key=lambda d: d.get("date", ""))
+            rows = rows[-_HISTORY_MAX:]
+            tmp = HISTORY_PATH + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(rows, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, HISTORY_PATH)
+        except Exception:  # noqa: BLE001
+            pass
+
+
+# --------------------------------------------------------------------------- #
+# Report assembly
+# --------------------------------------------------------------------------- #
+def build_report(force: bool = False) -> dict:
+    now = time.time()
+    if not force and _CACHE["data"] and (now - _CACHE["ts"]) < _CACHE_TTL:
+        return _CACHE["data"]
+
+    # run all independent network fetches concurrently
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        f_vix = ex.submit(fetch_vix)
+        f_quotes = ex.submit(fetch_markets)
+        f_news = ex.submit(fetch_news)
+        f_fgc = ex.submit(fetch_fear_greed_crypto)
+        f_fgs = ex.submit(fetch_fear_greed_stocks)
+        f_stable = ex.submit(fetch_stablecoins)
+        vix = f_vix.result()
+        quotes = f_quotes.result()
+        news = f_news.result()
+        fg_crypto = f_fgc.result()
+        fg_stocks = f_fgs.result()
+        stablecoins = f_stable.result()
+
+    geo = [n for n in news if n["category"] == "geopolitics"][:10]
+    mk = [n for n in news if n["category"] == "markets"][:10]
+
+    # translate only the displayed headlines (concise Arabic)
+    titles = [n["title"] for n in geo] + [n["title"] for n in mk]
+    tr = _translate_batch(titles)
+    for i, n in enumerate(geo):
+        n["title_ar"] = tr[i]
+    for j, n in enumerate(mk):
+        n["title_ar"] = tr[len(geo) + j]
+
+    score = market_score(vix, news, fg_stocks)
+    whale = whale_signal(quotes, stablecoins)
+    points = key_points(vix, score, geo, mk, fg_crypto, fg_stocks, whale)
+    line = bottom_line(score)
+
+    report = {
+        "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "generated_date": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "generated_ts": int(datetime.now(timezone.utc).timestamp()),
+        "vix": vix,
+        "quotes": quotes,
+        "score": score,
+        "points": points,
+        "bottom_line": line,
+        "geopolitics": geo,
+        "markets": mk,
+        "news_count": len(news),
+        "fear_greed_crypto": fg_crypto,
+        "fear_greed_stocks": fg_stocks,
+        "stablecoins": stablecoins,
+        "whale_signal": whale,
+    }
+    _CACHE["data"] = report
+    _CACHE["ts"] = now
+    record_history(report)
+    return report
+
+
+if __name__ == "__main__":
+    import json
+
+    print(json.dumps(build_report(force=True), ensure_ascii=False, indent=2))

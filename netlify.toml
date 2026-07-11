@@ -1,0 +1,12 @@
+# Netlify build configuration for Market Brief.
+# Netlify runs Python at BUILD time to generate a static page, then serves it.
+
+[build]
+  # Install deps, then render the static page into ./dist
+  command = "pip install -r requirements.txt && python build_static.py"
+  publish = "dist"
+  functions = "netlify/functions"
+
+[build.environment]
+  # Netlify build image Python version (3.10+ required for the type hints used)
+  PYTHON_VERSION = "3.11"

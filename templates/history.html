@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>السجل اليومي — نشرة السوق</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="mark">م</div>
+      <div class="name">
+        <b>السجل اليومي</b>
+        <span>أرشيف تقييمات السوق ومؤشر VIX — يوماً بيوم</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="/" class="primary">← لوحة اليوم</a>
+      <a href="/logout">خروج</a>
+    </nav>
+  </header>
+
+  <section class="card mt">
+    <div class="eyebrow">📑 سجلّ التقارير · {{ rows|length }} يوم محفوظ</div>
+    {% if rows %}
+    <div class="table-wrap mt">
+      <table class="hist">
+        <thead>
+          <tr>
+            <th>التاريخ</th>
+            <th>VIX</th>
+            <th>الحالة</th>
+            <th>التقييم /10</th>
+            <th>الوصف</th>
+            <th>خوف الأسهم</th>
+            <th>خوف الكريبتو</th>
+            <th>أخبار</th>
+            <th>الزبدة</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+          <tr {% if loop.first %}class="today"{% endif %}>
+            <td><b>{{ row.date }}</b></td>
+            <td><b style="color:{{ row.vix_color or '#23252e' }}">{{ row.vix if row.vix is not none else '—' }}</b></td>
+            <td>
+              {% if row.vix_label_ar %}
+              <span class="pill" style="background:{{ row.vix_color or '#c8a027' }}">{{ row.vix_label_ar }}</span>
+              {% else %}—{% endif %}
+            </td>
+            <td><b style="color:{{ row.score_color or '#23252e' }}">{{ row.score if row.score is not none else '—' }}</b></td>
+            <td>{{ row.score_label_ar or '—' }}</td>
+            <td>{{ row.fg_stocks if row.fg_stocks is not none else '—' }}</td>
+            <td>{{ row.fg_crypto if row.fg_crypto is not none else '—' }}</td>
+            <td>{{ row.news_count if row.news_count is not none else '—' }}</td>
+            <td class="hist-bl">{{ row.bottom_line or '' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="mt" style="color:#8c8a82">لا توجد سجلات بعد — سيُحفظ أول تقرير تلقائياً عند تحديث اللوحة.</p>
+    {% endif %}
+  </section>
+
+  <div class="foot"><b>Market Brief</b> · السجل يُحدَّث تلقائياً مرة كل يوم</div>
+</div>
+</body>
+</html>
