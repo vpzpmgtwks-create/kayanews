@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: market-brief
+    name: kayanews
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
