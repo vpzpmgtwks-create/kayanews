@@ -841,6 +841,44 @@ table.hist tbody tr:nth-child(n+6) { animation-delay: .52s; }
   .tick { padding: 12px; }
 }
 
+/* ─── Fiqh Promo Card ─── */
+.fiqh-promo {
+  display: flex; align-items: center; gap: 20px;
+  background: var(--surface);
+  border: 1px solid rgba(240,120,24,.22);
+  border-radius: var(--radius);
+  padding: 22px 24px;
+  text-decoration: none; color: inherit;
+  box-shadow: 0 0 50px rgba(240,120,24,.05);
+  transition: border-color .2s, box-shadow .2s, transform .2s;
+}
+.fiqh-promo:hover {
+  border-color: rgba(240,120,24,.4);
+  box-shadow: 0 0 60px rgba(240,120,24,.1);
+  transform: translateY(-1px);
+}
+.fp-icon { font-size: 36px; flex-shrink: 0; line-height: 1; }
+.fp-body { flex: 1; }
+.fp-eyebrow {
+  font-size: 10px; font-weight: 800; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--orange); margin-bottom: 6px;
+}
+.fp-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+.fp-sub { font-size: 13px; color: var(--ink-2); line-height: 1.7; }
+.fp-btn {
+  display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+  background: var(--orange); color: #fff;
+  font-size: 14px; font-weight: 700;
+  padding: 11px 22px; border-radius: 999px;
+  box-shadow: 0 8px 24px -8px rgba(240,120,24,.5);
+  transition: filter .2s, transform .2s;
+}
+.fiqh-promo:hover .fp-btn { filter: brightness(1.1); transform: translateX(-3px); }
+@media (max-width: 600px) {
+  .fiqh-promo { flex-direction: column; text-align: center; }
+  .fp-btn { width: 100%; justify-content: center; }
+}
+
 /* Freeze one-shot entrances when tab is hidden */
 body.still,
 body.still::before,
