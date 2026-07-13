@@ -49,6 +49,11 @@ def history():
     return render_template("history.html", rows=brief.get_history())
 
 
+@app.route("/fiqh")
+def fiqh_page():
+    return render_template("fiqh.html")
+
+
 @app.route("/api/history")
 def api_history():
     return jsonify(brief.get_history())

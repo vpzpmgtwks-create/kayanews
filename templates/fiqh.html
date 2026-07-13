@@ -1,0 +1,947 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>فقه العملات الرقمية — نشرة السوق</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:   #F07818;
+      --orange-2: #C86010;
+      --orange-3: #FF9530;
+      --page:     #070707;
+      --surface:  #111111;
+      --surface-2:#191919;
+      --line:     #1f1f1f;
+      --line-2:   #2a2a2a;
+      --ink:      #EDE8E2;
+      --ink-2:    #7A7268;
+      --ink-3:    #585450;
+    }
+
+    body {
+      font-family: "Tajawal", sans-serif;
+      background: var(--page);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ─── NAV ─── */
+    .navpill {
+      position: sticky; top: 16px; z-index: 100;
+      display: flex; align-items: center; gap: 8px;
+      max-width: 900px; margin: 16px auto 0;
+      padding: 10px 18px;
+      background: rgba(10,10,10,.88);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(240,120,24,.2);
+      border-radius: 999px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.75), inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .brandname {
+      font-weight: 800; font-size: 15px;
+      background: linear-gradient(135deg, var(--orange-3), var(--orange));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .nav-links { display: flex; gap: 4px; margin: 0 auto; }
+    .nav-links a {
+      color: var(--ink-2); text-decoration: none;
+      font-size: 13px; font-weight: 500;
+      padding: 6px 12px; border-radius: 999px;
+      transition: color .2s, background .2s;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--orange); background: rgba(240,120,24,.1);
+    }
+    .nav-back {
+      color: var(--ink-2); text-decoration: none;
+      font-size: 13px; display: flex; align-items: center; gap: 5px;
+      padding: 6px 12px; border-radius: 999px;
+      border: 1px solid var(--line-2);
+      transition: color .2s, border-color .2s;
+    }
+    .nav-back:hover { color: var(--orange); border-color: rgba(240,120,24,.4); }
+
+    /* ─── HERO ─── */
+    .page-hero {
+      max-width: 900px; margin: 48px auto 0;
+      padding: 0 20px 40px;
+      text-align: center;
+    }
+    .eyebrow {
+      display: inline-block;
+      font-size: 11px; font-weight: 700; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--orange);
+      background: rgba(240,120,24,.1);
+      border: 1px solid rgba(240,120,24,.22);
+      padding: 4px 14px; border-radius: 999px;
+      margin-bottom: 20px;
+    }
+    .page-hero h1 {
+      font-size: clamp(24px, 5vw, 40px);
+      font-weight: 800; line-height: 1.25;
+      margin-bottom: 14px;
+    }
+    .page-hero h1 span { color: var(--orange); }
+    .page-hero p {
+      color: var(--ink-2); font-size: 15px; line-height: 1.8;
+      max-width: 560px; margin: 0 auto 28px;
+    }
+    .hero-meta {
+      display: flex; align-items: center; justify-content: center; gap: 20px;
+      flex-wrap: wrap;
+    }
+    .hero-meta-item {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; color: var(--ink-2);
+    }
+    .hero-meta-item svg { color: var(--orange); }
+
+    /* ─── GRID ─── */
+    .cards-grid {
+      max-width: 900px; margin: 0 auto;
+      padding: 0 20px 60px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+
+    /* ─── CARD ─── */
+    .fcard {
+      background: #111111;
+      border: 1px solid #1e1e1e;
+      border-radius: 20px;
+      padding: 22px 20px 20px;
+      display: flex; flex-direction: column; gap: 14px;
+      transition: border-color .25s, transform .2s, box-shadow .25s;
+      cursor: pointer;
+    }
+    .fcard:hover {
+      border-color: rgba(240,120,24,.35);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 24px rgba(240,120,24,.06);
+    }
+    .fcard-head {
+      display: flex; align-items: center; gap: 11px;
+    }
+    .day-badge {
+      flex-shrink: 0;
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: rgba(240,120,24,.1);
+      border: 1px solid rgba(240,120,24,.22);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: var(--orange);
+    }
+    .fcard-title {
+      font-size: 14px; font-weight: 700; line-height: 1.4;
+      flex: 1;
+    }
+    .fcard-subtitle {
+      font-size: 11px; color: var(--ink-3); font-weight: 500;
+    }
+    .fcard-body {
+      font-size: 13px; line-height: 1.8; color: var(--ink-2);
+      flex: 1;
+    }
+    .fcard-body strong { color: var(--ink); }
+    .fcard-body .tag {
+      display: inline-block;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 999px;
+      background: rgba(240,120,24,.1);
+      color: var(--orange);
+      margin-left: 4px;
+    }
+    .fcard-footer {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .copy-btn {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 700; color: var(--orange);
+      background: rgba(240,120,24,.1);
+      border: 1px solid rgba(240,120,24,.22);
+      border-radius: 999px;
+      padding: 6px 14px; cursor: pointer;
+      transition: background .2s, border-color .2s;
+      font-family: "Tajawal", sans-serif;
+    }
+    .copy-btn:hover { background: rgba(240,120,24,.2); border-color: rgba(240,120,24,.5); }
+    .copy-btn.copied { color: #22C97A; background: rgba(34,201,122,.1); border-color: rgba(34,201,122,.3); }
+
+    /* ─── MODAL ─── */
+    .modal-bg {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,.8); backdrop-filter: blur(8px);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    .modal-bg.open { display: flex; }
+    .modal {
+      background: #111; border: 1px solid rgba(240,120,24,.25);
+      border-radius: 20px; padding: 28px 28px 24px;
+      max-width: 560px; width: 100%; max-height: 85vh;
+      display: flex; flex-direction: column; gap: 16px;
+      box-shadow: 0 30px 80px rgba(0,0,0,.9);
+    }
+    .modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .modal-title { font-size: 16px; font-weight: 800; }
+    .close-btn {
+      width: 32px; height: 32px; border-radius: 999px;
+      background: var(--surface-2); border: 1px solid var(--line-2);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: var(--ink-2); font-size: 18px;
+      transition: color .2s;
+    }
+    .close-btn:hover { color: var(--ink); }
+    .modal-text {
+      overflow-y: auto; flex: 1;
+      font-size: 14px; line-height: 2;
+      color: var(--ink); white-space: pre-wrap;
+      direction: rtl; text-align: right;
+      background: var(--surface-2); border-radius: 12px;
+      padding: 16px; border: 1px solid var(--line);
+    }
+    .modal-actions {
+      display: flex; gap: 10px;
+    }
+    .modal-copy, .modal-tg {
+      flex: 1; padding: 11px;
+      border-radius: 999px; border: none;
+      font-family: "Tajawal", sans-serif;
+      font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: filter .2s;
+    }
+    .modal-copy { background: rgba(240,120,24,.15); color: var(--orange); border: 1px solid rgba(240,120,24,.3); }
+    .modal-copy:hover { filter: brightness(1.2); }
+    .modal-tg { background: var(--orange); color: #fff; box-shadow: 0 8px 24px -8px rgba(240,120,24,.6); }
+    .modal-tg:hover { filter: brightness(1.1); }
+
+    /* ─── FOOTER ─── */
+    .page-footer {
+      text-align: center; padding: 24px;
+      font-size: 12px; color: var(--ink-3);
+      border-top: 1px solid var(--line);
+    }
+
+    @media (max-width: 600px) {
+      .navpill { margin: 12px; border-radius: 16px; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<div style="padding: 0 16px;">
+  <nav class="navpill">
+    <a href="/" class="nav-back">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      الرئيسية
+    </a>
+    <span class="brandname" style="margin-right: auto; margin-left: auto;">فقه العملات الرقمية</span>
+    <a href="https://t.me/+qBtY37bvQow2NWZk" target="_blank" rel="noopener" class="nav-back" style="border-color: rgba(240,120,24,.3); color: var(--orange);">
+      ✈ القناة
+    </a>
+  </nav>
+</div>
+
+<!-- HERO -->
+<div class="page-hero">
+  <div class="eyebrow">📚 سلسلة يومية</div>
+  <h1>فقه <span>العملات الرقمية</span></h1>
+  <p>15 رسالة يومية مستخلصة من كتاب "فقه العملات الرقمية — من التأصيل التاريخي إلى أحكام المعاملات". انقر على أي رسالة لقراءتها أو نسخها وإرسالها لقناتك.</p>
+  <div class="hero-meta">
+    <div class="hero-meta-item">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+      148 صفحة
+    </div>
+    <div class="hero-meta-item">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      15 رسالة يومية
+    </div>
+    <div class="hero-meta-item">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.22 1.18 2 2 0 012.18 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.91 7.91a16 16 0 006.72 6.72l1.27-1.54a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+      جاهزة للإرسال
+    </div>
+  </div>
+</div>
+
+<!-- CARDS -->
+<div class="cards-grid" id="cards-grid"></div>
+
+<!-- MODAL -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <div class="modal-head">
+      <span class="modal-title" id="modal-title"></span>
+      <button class="close-btn" id="modal-close">×</button>
+    </div>
+    <div class="modal-text" id="modal-text"></div>
+    <div class="modal-actions">
+      <button class="modal-copy" id="modal-copy">📋 نسخ الرسالة</button>
+      <button class="modal-tg" id="modal-tg">✈ فتح القناة</button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="page-footer">نشرة السوق — كايا جلوبال · الرسائل مستخلصة من كتاب فقه العملات الرقمية</div>
+
+<script>
+const MESSAGES = [
+  {
+    day: "١",
+    title: "مقدمة الكتاب",
+    subtitle: "لماذا نحتاج فقه العملات الرقمية؟",
+    preview: "سنة الله في فقهه أن تتجدد الفروع بتجدد الوقائع...",
+    full: `📚 فقه العملات الرقمية
+"من التأصيل التاريخي إلى أحكام المعاملات"
+
+📖 لماذا هذا الكتاب؟
+
+العملات الرقمية أعادت طرح أسئلة فقهية لم تُختبر من قبل:
+• ما حكم امتلاكها؟
+• هل هي نقد أم سلعة؟
+• ما حكم تداولها؟
+• كيف نميّز الحلال من الحرام فيها؟
+
+هذا الكتاب يجيب بمنهج علمي يجمع بين:
+✅ الأصول الشرعية الثابتة التي لا تتبدّل
+✅ الواقع الرقمي المتجدد باستمرار
+
+📌 طريقة القراءة:
+القسم الأول (الفصول 1-11): يبني لك الأساس الفكري
+القسم الثاني (الفصول 12-26): يطبّق الأحكام على كل معاملة
+
+سنقرأه معاً، مسألة مسألة، يوماً بيوم 📖
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "٢",
+    title: "تطور النقود التاريخي",
+    subtitle: "من المقايضة إلى الرقمي",
+    preview: "المقايضة → الذهب → الورق → الرقمي...",
+    full: `📚 فقه العملات الرقمية | اليوم الثاني
+⏳ كيف تطورت النقود عبر التاريخ؟
+
+① المقايضة (أول مرحلة):
+تبادل السلع مباشرةً بلا وسيط
+🔴 مشكلتها: يجب أن يريد كلٌّ من الطرفين ما عند الآخر في وقت واحد — شبه مستحيل
+
+② الذهب والفضة:
+✅ ذو قيمة ذاتية — قابل للتقسيم — مقبول عالمياً
+✅ استقر عليه الاقتصاد قروناً
+→ البيتكوين مثله في الندرة والتقسيم
+
+③ النقود الورقية:
+وثيقة تمثّل التزام الدولة — لا قيمة ذاتية لها
+⚠️ فقدت قيمتها الذاتية، ومع ذلك صارت "ثمناً" لأن الناس تعارفوا عليها
+
+④ العملات الرقمية (المرحلة الجديدة):
+← لا جهة مصدِرة مركزية (في الغالب)
+← محدودة العرض رياضياً
+← السؤال الفقهي: أين تقع في هذا التطور؟
+
+📌 قاعدة ذهبية:
+"النقود اتفاق اجتماعي وليس خاصية ذاتية"
+ما تعارف عليه الناس نقداً فهو نقد
+→ وهذا مدخل فقهي بالغ الأهمية
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "٣",
+    title: "تعريف العملات الرقمية وأنواعها",
+    subtitle: "Coin — Token — Stablecoin — NFT — CBDC",
+    preview: "ما هي العملة الرقمية؟ وما الفرق بين Coin وToken؟",
+    full: `📚 فقه العملات الرقمية | اليوم الثالث
+🔤 ما هي العملات الرقمية؟ وما أنواعها؟
+
+التعريف الجامع:
+"بيانات رقمية على شبكة بلوكشين، لها قيمة متفق عليها، قابلة للتداول والتحويل"
+
+📊 الأنواع الخمسة وحكم كل نوع:
+
+① Coin — العملة الأصلية:
+لها بلوكشينها الخاص
+مثال: BTC، ETH، SOL
+← الأقرب لمفهوم النقد والسلعة الرقمية
+← الأساس في البحث الفقهي
+
+② Token — الرمز:
+يعمل فوق شبكة أخرى بعقد ذكي (Smart Contract)
+مثال: USDT، UNI، LINK
+← حكمه يتبع المشروع الذي يمثّله
+
+③ Stablecoin — العملة المستقرة:
+مربوطة بأصل (دولار / ذهب)
+مثال: USDT، USDC، XAUT
+← لها أحكام خاصة في الصرف تختلف عن غيرها
+
+④ NFT — الرمز غير القابل للاستبدال:
+يمثّل ملكية أصل رقمي فريد
+← حكمه تابع لما يمثّله (صورة؟ عقد؟ لعبة؟)
+
+⑤ CBDC — عملة البنك المركزي:
+صادرة رسمياً من الدولة
+← في الحكم كالعملة الورقية تماماً
+
+📌 القاعدة الفقهية:
+الحكم يتبع الطبيعة والوظيفة، لا الاسم
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "٤",
+    title: "وظائف النقد وتحققها في الرقمي",
+    subtitle: "هل العملة الرقمية نقد حقيقي؟",
+    preview: "للنقد أربع وظائف — فأيها تحققت في الكريبتو؟",
+    full: `📚 فقه العملات الرقمية | اليوم الرابع
+⚖️ هل العملات الرقمية نقد حقيقي؟
+
+للنقد الفقهي أربع وظائف جوهرية:
+
+① مقياس للقيمة:
+✅ تحققت — يُسعَّر بها كثير من السلع والخدمات
+✅ MicroStrategy غيّرت اسمها Strategy عام 2025 إشارةً لمكانة Bitcoin
+
+② وسيط للتبادل:
+✅ تحققت — تُستخدم في معاملات فعلية
+✅ BlackRock، Fidelity، JPMorgan كلها بدأت تتعامل بها رسمياً
+
+③ مخزن للقيمة:
+⚠️ جزئي — البيتكوين ارتفع من $47 إلى +$90,000
+❌ لكن التقلب الشديد يُضعف هذه الوظيفة مقارنةً بالذهب
+
+④ وحدة للمحاسبة:
+⚠️ في طور النضج — لم تُحسب بها الميزانيات الكبرى بعد
+
+📌 الخلاصة الفقهية:
+البيتكوين "مال متقوَّم" ← يجوز بيعه وشراؤه
+لكنه لم يرق بعدُ لمرتبة النقد الكامل من حيث الثبات
+
+→ هذا يؤثر مباشرة على أحكام الربا والصرف
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "٥",
+    title: "الملكية في العملات الرقمية",
+    subtitle: "هل تملك عملتك فعلاً؟",
+    preview: "\"من لا يملك المفتاح الخاص لا يملك العملة\"",
+    full: `📚 فقه العملات الرقمية | اليوم الخامس
+🔑 هل يمكنك امتلاك العملات الرقمية شرعاً؟
+
+شرطا الملكية الشرعية:
+① الحيازة (الإحراز)
+② الاختصاص
+
+كيف تتحققان في الكريبتو؟
+
+✅ الملكية الكاملة (محفظتك الخاصة):
+العملة محفوظة على البلوكشين
+لا أحد يتصرف فيها بدون Private Key الخاص بك
+← هذه ملكية تامة شرعاً
+
+⚠️ الملكية الناقصة (بورصة الصرف):
+عملتك على المنصة = دَين في ذمتها
+إذا أُغلقت المنصة ضاعت عملتك
+← هذا حق مالي وليس ملكية عين
+
+📌 قاعدة لا تُنسى:
+"من لا يملك المفتاح الخاص (Private Key)
+لا يملك العملة"
+
+التطبيق العملي:
+✅ عملة في محفظة خاصة = ملكية تامة
+⚠️ عملة في البورصة = ملكية ناقصة
+
+← لذلك تحويلها لمحفظتك حيازة حقيقية
+ومنحها لمنصة إيداع يُعدّ تسليم قانوني
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "٦",
+    title: "النقد والثمن في العملات الرقمية",
+    subtitle: "ما الفرق؟ وكيف يؤثر على الأحكام؟",
+    preview: "للعملات الرقمية وجهان: وجه النقد ووجه الثمن...",
+    full: `📚 فقه العملات الرقمية | اليوم السادس
+💰 النقد والثمن — فرق دقيق وأثر كبير
+
+تعريف النقد الفقهي:
+"وصف يثبت لكل شيء يُعرَّف به ثمن ما يقابله في التبادل"
+= النقد يُقيِّم الأشياء ولا يُقيَّم بغيره
+
+🔄 ثلاث مراتب:
+① الذهب والفضة ← نقد بالذات (لهما قيمة في أنفسهما)
+② الأوراق النقدية ← نقد باتفاق الناس والدولة
+③ العملات الرقمية ← في طور الانتقال
+
+📌 موقف العملات الرقمية:
+لها وجهان:
+• وجه النقد ← مقبوليتها وانتشارها وقابليتها للتداول
+• وجه الثمن ← وجودها كأصل رقمي قابل للبيع والتقييم
+
+هذا الازدواج يولّد أحكاماً مختلفة:
+
+إذا اعتبرناها نقداً:
+← تُطبَّق أحكام الصرف (لا تفاضل بين جنس واحد + تقابض)
+← بيع BTC بـ BTC أكثر = ربا الفضل
+
+إذا اعتبرناها سلعة:
+← يجوز التفاضل + يُشترط التقابض الفوري فقط في الجنس الواحد
+← مرونة أكبر في بعض الحالات
+
+📌 الراجح:
+العملة الرقمية مال متقوَّم له وظائف النقد
+وتُطبَّق عليها أحكام الصرف في الغالب
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "٧",
+    title: "التقلب في العملات الرقمية",
+    subtitle: "حكمه وصوره وأثره على المعاملات",
+    preview: "البيتكوين خسر 99% ثم عاد ليتجاوز 90,000 دولار...",
+    full: `📚 فقه العملات الرقمية | اليوم السابع
+📊 التقلب — حكمه وصوره
+
+ما هو التقلب؟
+ارتفاع السعر أو انخفاضه بشكل حاد خلال فترة قصيرة
+
+أرقام حقيقية:
+• BTC: من $47 → +$90,000 (2010–2023) ← ارتفاع %98-99
+• ETH: من $0.47 → +$10,000 ← ارتفاع %99 من القيمة
+• ماز عملات انهارت %70-99% من قمتها
+
+📌 هل التقلب يُحرّم التداول؟
+⬅ لا، التقلب بذاته ليس محرِّماً
+السلع والأسهم تتقلب منذ القدم
+
+لكن التقلب يؤثر على:
+① صحة عقد الثمن (لا غرر محرِّم)
+② صحة قبض المبيع (هل تأخير التسليم يُبيح ربا النسيئة؟)
+③ المضاربة المحرمة ≠ التجارة المشروعة
+
+الفرق الجوهري:
+⭕ تجارة مشروعة: شراء أصل متوقع النمو بنية حقيقية
+❌ قمار/غرر: الشراء بناءً على التذبذب وحده بلا معرفة
+
+📌 الخلاصة:
+التقلب نفسه لا يُحرّم — المحرِّم هو:
+الرافعة المالية + Futures + القمار على التذبذب بلا أصل
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "٨",
+    title: "التداول الفوري — Spot",
+    subtitle: "الأصل في التداول وشروط صحته",
+    preview: "Spot Trading = أقرب صورة للتداول الحلال",
+    full: `📚 فقه العملات الرقمية | اليوم الثامن
+🟢 التداول الفوري (Spot) — الحكم والشروط
+
+ما هو Spot Trading؟
+شراء أو بيع العملة فوراً بتسليم حقيقي للعملتين
+← العملة تنتقل إلى محفظتك مباشرة
+
+لماذا هو الأقرب للحلال؟
+
+① يتحقق التقابض الفوري (شرط الصرف)
+② لا رافعة مالية = لا قرض بفائدة
+③ تملك الأصل الحقيقي في محفظتك
+
+📌 شروط صحة Spot في الكريبتو:
+① التداول يجري على الفوري الحقيقي (وليس من المشتقات)
+② لا استخدام للرافعة المالية (Leverage)
+③ العملة مشروعة في ذاتها (ليست Meme لا أصل لها)
+
+⚠️ متى ينقلب Spot إلى محرَّم؟
+
+إذا استخدمت Margin أو Leverage
+← تقترض من المنصة بفائدة = ربا
+
+إذا كانت العملة لا مشروع حقيقي وراءها
+← غرر وتلاعب
+
+📌 جدول تلخيصي:
+✅ Spot بلا رافعة + عملة مشروعة = حلال بشروطه
+❌ Futures / Options / Margin = محرّم
+⚠️ Bot + Spot = يصح بضوابط
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "٩",
+    title: "الاستثمار طويل الأجل",
+    subtitle: "HODL — حكمه وضوابطه",
+    preview: "هل الاحتفاظ بالبيتكوين سنوات شرعي؟",
+    full: `📚 فقه العملات الرقمية | اليوم التاسع
+📈 الاستثمار طويل الأجل (HODL) — الحكم والضوابط
+
+الصورة:
+شراء عملة والاحتفاظ بها فترة طويلة انتظاراً لارتفاع قيمتها
+
+الأصل الشرعي الذي يُبنى عليه الحكم:
+← الأصل في المعاملات الحِل، والاستثمار في الأصول جائز
+← الربح من ارتفاع القيمة جائز (يشبه الأرباح الرأسمالية في الأسهم)
+
+✅ متى يكون الاستثمار الطويل جائزاً؟
+
+① العملة لها مشروع حقيقي خلفها
+② تملكها ملكية حقيقية (محفظة خاصة)
+③ لا ربا ولا مشتقات في عملية الشراء
+
+وهل يوجد ما يمنع الاستثمار؟
+⬅ الاستثمار بذاته لا يُحرَّم بسبب التقلب
+التقلب خطر تجاري كأي سلعة
+
+⚠️ ما يحول الاستثمار إلى مشكلة:
+
+① تبذير بغير حساب
+← الإسلام يحثّ على توسيط العقل في إدارة المال
+
+② شراء بعملة مقترضة بفائدة
+← الربا محرّم بأي صورة
+
+③ الاحتفاظ بعملة Scam أو غير مشروعة
+← لا يجوز تملّك ما لا قيمة حقيقية وراءه
+
+📌 الخلاصة:
+HODL للعملات المشروعة بمال حلال = جائز بل مستحسن
+إذ فيه تنمية المال دون مخاطرة الربا
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "١٠",
+    title: "المشتقات المالية",
+    subtitle: "Futures — CFDs — Options — Binary",
+    preview: "هذه المشتقات الأربعة بالغ الخطورة شرعياً...",
+    full: `📚 فقه العملات الرقمية | اليوم العاشر
+❌ المشتقات المالية — أحكامها القاطعة
+
+① Futures — العقود الآجلة:
+اتفاق على شراء/بيع بسعر مستقبلي محدد
+⬅ بيع ما لا يملك + دخول في البيع المؤجل
+❌ محرَّم — صورة من صور بيع الدَّيْن بالدَّيْن
+
+② CFDs — عقود الفروقات:
+لا تمتلك الأصل — تراهن على فرق السعر فقط
+❌ محرَّم — لا شيء وراءه سوى الميسر
+
+③ Options — الخيارات:
+دفع مبلغ مقابل "حق" الشراء/البيع بسعر محدد
+⬅ بيع حق مجرد لا أصل له = غرر بالغ
+❌ محرَّم
+
+④ Binary Options:
+راهن على ارتفاع أو انخفاض السعر
+⬅ قمار صريح بمسمى مالي
+❌ محرَّم
+
+⑤ Margin/Leverage:
+اقتراض من المنصة بفائدة لمضاعفة الصفقة
+← Swap Fees = فوائد ربوية
+❌ محرَّم
+
+📌 قاعدة واحدة تحكم الجميع:
+"البيع الصحيح يستلزم وجود المبيع + القدرة على التسليم"
+كل ما لا يتحقق فيه هذا الشرط = مشكوك فيه أو محرَّم
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "١١",
+    title: "صرف الستيبلكوين — USDT",
+    subtitle: "حكم تبادل USDT بالدولار والعكس",
+    preview: "USDT ≠ دولار مئة بالمئة — وهذا الفارق الدقيق مهم جداً",
+    full: `📚 فقه العملات الرقمية | اليوم الحادي عشر
+💵 صرف الستيبلكوين — USDT بالدولار وحكمه
+
+الستيبلكوين:
+عملة رقمية مرتبطة بأصل (الدولار مثلاً)
+USDT ≈ $1 — لكنه ليس دولاراً حقيقياً
+
+🔍 السؤال الفقهي:
+هل تبادل USDT بالدولار صرف؟
+وهل يُشترط فيه التقابض الفوري والتماثل؟
+
+الجواب: نعم — لأن USDT في معنى الثمن
+← تُطبَّق عليه أحكام الصرف
+
+📌 الشروط التي يجب توافرها:
+
+① لا تفاضل في نفس الجنس
+(USDT بـ USDT أكثر = ربا الفضل)
+
+② تقابض فوري في المجلس
+(لا تأخير في استلام أي من الطرفين)
+
+③ الفارق بين جنسين مختلفين جائز
+(USDT بـ BTC = مختلف الجنس ← يجوز مع التقابض)
+
+⚠️ التحدي العملي:
+البورصات تُسجّل الصفقة فوراً في السجل
+لكن التسوية الفعلية قد تستغرق أجلاً
+
+← الفقهاء يعتبرون القيد الفوري تقابضاً حكمياً
+في المنصات الإلكترونية الموثوقة
+
+📌 خلاصة:
+USDT مع الدولار: صرف ← يشترط التقابض
+USDT مع BTC: بيع سلعة بأخرى ← يشترط التقابض أيضاً
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "١٢",
+    title: "الاكتتاب الرقمي — ICO / IEO",
+    subtitle: "حكم الاشتراك في إطلاق العملات الجديدة",
+    preview: "ICO تحتاج لفحص دقيق قبل المشاركة — غالبها مشكلة",
+    full: `📚 فقه العملات الرقمية | اليوم الثاني عشر
+🪙 الاكتتاب الرقمي (ICO / IEO) — الحكم التفصيلي
+
+ما هو الـ ICO؟
+إطلاق عملة أو رمز جديد لجمع تمويل لمشروع ما
+المستثمر يشتري الرمز قبل إطلاقه على أمل ارتفاعه
+
+📌 المشكلات الشرعية الأساسية:
+
+① الغرر (الجهالة):
+المشروع لم يُنجَز بعد — قيمة الرمز مجهولة
+← بيع ما لا يعلم المشتري قيمته الحقيقية
+
+② وعود مستقبلية:
+كثير من ICOs تبيع وعداً فقط لا أصلاً حقيقياً
+← هذا من أعظم صور الغرر
+
+③ Pump & Dump:
+المؤسسون يبيعون حصصهم بعد الإطلاق فتنهار العملة
+← غش وأكل أموال بالباطل
+
+📌 متى يجوز الاكتتاب؟
+
+✅ المشروع قائم فعلاً + منتج حقيقي
+✅ الرمز يمثّل حصة أو خدمة حقيقية
+✅ الشفافية الكاملة في التوزيع والتقييم
+✅ لا وعود مضخمة بلا ضمان
+
+❌ لا يجوز إذا:
+← لا مشروع حقيقي وراءه (Meme Coin)
+← وعود ربح مضمون
+← المؤسسون مجهولون
+
+📌 القاعدة:
+"الاكتتاب حكمه حكم ما يمثّله الرمز"
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "١٣",
+    title: "التداول بالبوت الآلي",
+    subtitle: "هل يجوز استخدام البوت في كريبتو؟",
+    preview: "البوت أداة — والحكم على ما ينفّذه لا على الأداة",
+    full: `📚 فقه العملات الرقمية | اليوم الثالث عشر
+🤖 التداول الآلي بالبوت — الحكم والضوابط
+
+ما هو البوت التداولي؟
+برنامج يُنفّذ صفقات تلقائياً بناءً على قواعد محددة
+
+📌 هل البوت بذاته حلال أم حرام؟
+البوت أداة تنفيذ فقط
+← حكمه تابع لما يُنفّذ:
+
+✅ بوت يتداول Spot بلا رافعة
+= جائز — مجرد أتمتة للتداول المشروع
+
+❌ بوت يتداول Futures / Margin
+= محرَّم — تنفيذ آلي لعقد محرَّم
+
+⚠️ بوت يستخدم Arbitrage
+= يحتاج فحصاً دقيقاً لطبيعة العقود
+
+📌 الشروط التي يجب تحديدها للبوت:
+
+① تحديد العملات المسموح بتداولها
+② تحديد نوع الصفقات (Spot فقط)
+③ تحديد حد الخسارة (الوقف)
+④ لا تداول بأموال مقترضة
+
+⚠️ تنبيه مهم:
+كثير من بوتات الكريبتو تستخدم Grid Trading
+مع فتح أوضاع Margin دون إشعار المستخدم
+← راجع إعدادات بوتك بدقة
+
+📌 الخلاصة:
+البوت وسيلة ← الحكم على النية والتطبيق
+بوت Spot نظيف + رقابة مستمرة = جائز بإذن الله
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "١٤",
+    title: "DeFi — التمويل اللامركزي",
+    subtitle: "الحكم الشامل على بروتوكولات DeFi",
+    preview: "DeFi تحتوي حلالاً وحراماً — والفرق في التفاصيل",
+    full: `📚 فقه العملات الرقمية | اليوم الرابع عشر
+⛓ DeFi — التمويل اللامركزي — الحكم التفصيلي
+
+ما هو DeFi؟
+بروتوكولات مالية تعمل على البلوكشين بدون وسيط مركزي
+= بنك بلا بنك، صرافة بلا صراف
+
+📌 أنواع DeFi وحكم كل نوع:
+
+① DEX — البورصة اللامركزية:
+تبادل فوري بين عملتين (Swap)
+✅ حلال بشروط: لا رافعة + عملة مشروعة + تقابض فوري
+
+② Liquidity Pool — مجمع السيولة:
+تودع عملتين وتكسب من رسوم التداول
+⚠️ محل خلاف: شبهة الغرر في نسبة العائد
++ "Impermanent Loss" يُضيّع جزءاً من رأس المال
+
+③ Lending / Borrowing — الإقراض بفائدة:
+تُقرض عملتك وتأخذ فائدة
+❌ محرَّم — ربا صريح بمسمى جديد
+
+④ Yield Farming:
+تضع أصولك وتربح رموزاً جديدة
+⚠️ محل خلاف — يحتاج فحص كل بروتوكول منفرداً
+
+⑤ Staking PoS:
+تُشارك في تأمين الشبكة وتأخذ مكافأة
+✅ جائز — أجر على عمل حقيقي
+
+📌 الخلاصة:
+DeFi ليست كتلة واحدة
+كل بروتوكول يحمل حكمه الخاص
+
+القاعدة: "البيع الأصيل اللامركزي جائز + الفائدة محرَّمة"
+
+#فقه_العملات_الرقمية`
+  },
+  {
+    day: "١٥",
+    title: "الخلاصة والتوجيهات النهائية",
+    subtitle: "ما احتفظ به من هذا الكتاب",
+    preview: "عشرة مبادئ ختامية تحكم تعاملك مع العملات الرقمية",
+    full: `📚 فقه العملات الرقمية | الرسالة الختامية 🎯
+✅ عشرة مبادئ تحكم تعاملك مع الكريبتو
+
+① الأصل في المعاملات الحِل
+← ما لا دليل على تحريمه فالأصل فيه الجواز
+
+② العملات الرقمية مال متقوَّم
+← يجوز بيعها وشراؤها والاستثمار فيها بشروطها
+
+③ الملكية الحقيقية بالمفتاح الخاص
+← "Not your keys, not your coins"
+
+④ Spot بلا رافعة = الأسلم دائماً
+← التبادل الفوري هو الأقرب للعقد الصحيح
+
+⑤ المشتقات كلها محل خطر شرعي
+← Futures / Options / CFDs / Binary = ابتعد
+
+⑥ الرافعة المالية ربا بصورة عصرية
+← الربا محرَّم مهما تغيّر اسمه
+
+⑦ احترس من ICO — اسأل قبل أن تستثمر
+← من مشروع واضح + منتج حقيقي + فريق موثوق
+
+⑧ DeFi = تدقق في كل بروتوكول
+← الفائدة محرَّمة — المقايضة الفورية حلال
+
+⑨ الجهل لا يُبيح التهاون
+← "من تاجر ولم يتفقَّه وقع في الربا شاء أم أبى"
+
+⑩ الحلال يكفي وفيه بركة
+← Spot + HODL + Staking PoS = طريق واضح حلال
+
+━━━━━━━━━━━━━━━━━━━
+📚 "فقه العملات الرقمية"
+انتهت سلسلة الـ 15 رسالة
+أسأل الله أن ينفعنا وإياكم بما تعلمنا
+
+#فقه_العملات_الرقمية`
+  }
+];
+
+function buildCards() {
+  const grid = document.getElementById('cards-grid');
+  MESSAGES.forEach((m, i) => {
+    const card = document.createElement('div');
+    card.className = 'fcard';
+    card.innerHTML = `
+      <div class="fcard-head">
+        <div class="day-badge">${m.day}</div>
+        <div>
+          <div class="fcard-title">${m.title}</div>
+          <div class="fcard-subtitle">${m.subtitle}</div>
+        </div>
+      </div>
+      <div class="fcard-body">${m.preview}</div>
+      <div class="fcard-footer">
+        <span style="font-size:11px;color:var(--ink-3);">اليوم ${m.day}</span>
+        <button class="copy-btn" data-idx="${i}">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+          نسخ
+        </button>
+      </div>
+    `;
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.copy-btn')) return;
+      openModal(i);
+    });
+    card.querySelector('.copy-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyText(m.full, e.currentTarget);
+    });
+    grid.appendChild(card);
+  });
+}
+
+function openModal(idx) {
+  const m = MESSAGES[idx];
+  document.getElementById('modal-title').textContent = `اليوم ${m.day} — ${m.title}`;
+  document.getElementById('modal-text').textContent = m.full;
+  document.getElementById('modal-bg').classList.add('open');
+  document.getElementById('modal-copy').onclick = () => copyText(m.full, document.getElementById('modal-copy'));
+}
+
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.classList.add('copied');
+    btn.textContent = '✅ تم النسخ!';
+    setTimeout(() => { btn.classList.remove('copied'); btn.textContent = orig; }, 2000);
+  });
+}
+
+document.getElementById('modal-close').addEventListener('click', () => {
+  document.getElementById('modal-bg').classList.remove('open');
+});
+document.getElementById('modal-bg').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) document.getElementById('modal-bg').classList.remove('open');
+});
+document.getElementById('modal-tg').addEventListener('click', () => {
+  window.open('https://t.me/+qBtY37bvQow2NWZk', '_blank', 'noopener');
+});
+
+buildCards();
+</script>
+</body>
+</html>
