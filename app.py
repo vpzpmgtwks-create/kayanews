@@ -81,6 +81,52 @@ def telegram_send_now():
     })
 
 
+@app.route("/api/telegram/find-chats", methods=["POST"])
+def telegram_find_chats():
+    """Given a bot token, return all chats the bot has seen via getUpdates."""
+    import requests as _req
+    data = request.get_json(silent=True) or {}
+    token = (data.get("token") or "").strip()
+    if not token:
+        return jsonify({"ok": False, "error": "أدخل التوكن أولاً"})
+    try:
+        # Validate token + get bot info
+        me = _req.get(
+            f"https://api.telegram.org/bot{token}/getMe", timeout=8
+        ).json()
+        if not me.get("ok"):
+            return jsonify({"ok": False, "error": "التوكن غير صحيح — تحقق منه"})
+        bot_name = me["result"].get("first_name", "")
+
+        # Pull recent updates to find chats
+        upd = _req.get(
+            f"https://api.telegram.org/bot{token}/getUpdates",
+            params={"limit": 100}, timeout=10
+        ).json()
+
+        chats = {}
+        for u in (upd.get("result") or []):
+            for key in ("message", "my_chat_member", "chat_member"):
+                msg = u.get(key)
+                if msg:
+                    chat = msg.get("chat", {})
+                    cid = chat.get("id")
+                    if cid and cid not in chats:
+                        chats[cid] = {
+                            "id": cid,
+                            "title": chat.get("title") or chat.get("username") or str(cid),
+                            "type": chat.get("type", ""),
+                        }
+
+        return jsonify({
+            "ok": True,
+            "bot_name": bot_name,
+            "chats": list(chats.values()),
+        })
+    except Exception as e:  # noqa: BLE001
+        return jsonify({"ok": False, "error": str(e)[:120]})
+
+
 # --------------------------------------------------------------------------- #
 # Background refresher — keeps data fresh even if nobody is polling
 # --------------------------------------------------------------------------- #

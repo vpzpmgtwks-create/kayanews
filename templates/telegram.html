@@ -131,6 +131,40 @@
     .sch-icon { font-size: 22px; flex: none; }
     .sch-label { color: var(--ink-3); font-weight: 700; font-size: 12px; }
     .sch-val   { color: var(--ink);   font-weight: 800; font-size: 15px; margin-top: 2px; }
+
+    /* Wizard */
+    .wizard-input {
+      width: 100%; box-sizing: border-box;
+      padding: 12px 16px; border-radius: var(--radius-s);
+      border: 2px solid var(--line); background: var(--surface-2);
+      color: var(--ink); font-size: 13.5px; font-family: "Tajawal", monospace;
+      outline: none; transition: border-color .2s; direction: ltr; text-align: left;
+    }
+    .wizard-input:focus { border-color: #229ed9; }
+    .wizard-btn {
+      margin-top: 12px; padding: 11px 28px;
+      background: #229ed9; color: #fff; border: none; border-radius: 999px;
+      font-size: 14px; font-weight: 800; font-family: "Tajawal", sans-serif;
+      cursor: pointer; transition: filter .2s;
+    }
+    .wizard-btn:hover:not(:disabled) { filter: brightness(1.1); }
+    .wizard-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .wizard-err { color: var(--down); font-weight: 700; font-size: 13.5px; margin-top: 10px; }
+    .chat-list { margin-top: 16px; display: flex; flex-direction: column; gap: 10px; }
+    .chat-item {
+      display: flex; justify-content: space-between; align-items: center;
+      background: var(--surface-2); border: 1px solid var(--line);
+      border-radius: var(--radius-s); padding: 12px 16px;
+    }
+    .chat-name { font-weight: 800; font-size: 14px; color: var(--ink); }
+    .chat-meta { font-size: 12px; color: var(--ink-3); margin-top: 3px; direction: ltr; }
+    .copy-btn {
+      padding: 7px 16px; border-radius: 999px; border: none;
+      background: #229ed9; color: #fff; font-size: 12px; font-weight: 800;
+      font-family: "Tajawal", sans-serif; cursor: pointer; white-space: nowrap;
+      flex: none; transition: background .2s;
+    }
+    .copy-btn.copied { background: var(--up); }
   </style>
 </head>
 <body>
@@ -268,39 +302,53 @@
       {% endif %}
     </div>
 
-    <!-- Setup guide (show only if not configured) -->
-    {% if not status.configured %}
-    <div class="tg-card">
-      <div class="tg-card-title">دليل الإعداد</div>
-      <ol class="setup-steps">
+    <!-- Interactive setup wizard (always visible) -->
+    <div class="tg-card" style="margin-bottom:22px">
+      <div class="tg-card-title">معالج الإعداد — اكتشف الـ Chat ID</div>
+      <ol class="setup-steps" style="margin-bottom:20px">
         <li>
           <span class="step-num">١</span>
-          <div>افتح Telegram وابحث عن <strong>@BotFather</strong> ← أرسل <code>/newbot</code> ← اتبع الخطوات واحصل على <strong>Bot Token</strong></div>
+          <div>افتح Telegram → ابحث عن مجموعتك → أضف البوت كـ <strong>مشرف</strong> مع صلاحية الكتابة → أرسل أي رسالة في المجموعة</div>
         </li>
         <li>
           <span class="step-num">٢</span>
-          <div>أنشئ قناة أو استخدم مجموعة موجودة ← أضف البوت كـ <strong>مشرف</strong> مع صلاحية إرسال الرسائل</div>
+          <div>الصق توكن البوت أدناه واضغط <strong>ابحث</strong> — ستظهر قائمة بجميع المجموعات التي يراها البوت</div>
         </li>
         <li>
           <span class="step-num">٣</span>
-          <div>احصل على Chat ID: للقنوات العامة هو <code>@اسم_القناة</code>، للخاصة استخدم <strong>@userinfobot</strong> للحصول على الـ ID الرقمي</div>
-        </li>
-        <li>
-          <span class="step-num">٤</span>
-          <div>
-            في لوحة تحكم <strong>Render</strong> → Environment → أضف:
-            <br><code>TELEGRAM_BOT_TOKEN</code> = التوكن من BotFather
-            <br><code>TELEGRAM_CHAT_ID</code> = @قناتك أو الـ ID الرقمي
-            <br><code>TELEGRAM_SEND_HOUR</code> = الساعة (٠-٢٣) للإرسال اليومي
-          </div>
-        </li>
-        <li>
-          <span class="step-num">٥</span>
-          <div>أعد نشر الموقع وعُد لهذه الصفحة ← اضغط <strong>إرسال الآن</strong> للتجربة ✈</div>
+          <div>انسخ الـ Chat ID ثم أضفه في <strong>Render → Environment</strong> مع التوكن</div>
         </li>
       </ol>
+      <label style="font-size:13px;font-weight:800;color:var(--ink-2);display:block;margin-bottom:8px">
+        توكن البوت (Bot Token)
+      </label>
+      <input type="password" id="wiz-token" class="wizard-input"
+             placeholder="123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+             autocomplete="off" spellcheck="false">
+      <div style="font-size:12px;color:var(--ink-3);margin-top:6px">
+        التوكن لا يُحفظ ولا يُرسل لأي جهة خارجية — يُستخدم مرة واحدة لاستعلام Telegram API
+      </div>
+      <button class="wizard-btn" id="wiz-btn">🔍 ابحث عن المجموعات</button>
+      <div class="wizard-err" id="wiz-err" style="display:none"></div>
+      <div class="chat-list" id="chat-list" style="display:none"></div>
+
+      <div style="border-top:1px dashed var(--line);margin-top:24px;padding-top:18px">
+        <div style="font-size:12px;font-weight:800;color:var(--ink-3);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px">
+          بعد نسخ الـ Chat ID — أضف هذه المتغيرات في Render → Environment
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12.5px;direction:ltr">
+            <span style="color:var(--ink-3)">TELEGRAM_BOT_TOKEN</span> = <span style="color:var(--orange)">توكن البوت</span>
+          </div>
+          <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12.5px;direction:ltr">
+            <span style="color:var(--ink-3)">TELEGRAM_CHAT_ID</span> = <span style="color:var(--orange)">-1001234567890</span>
+          </div>
+          <div style="background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:10px 14px;font-family:monospace;font-size:12.5px;direction:ltr">
+            <span style="color:var(--ink-3)">TELEGRAM_SEND_HOUR</span> = <span style="color:var(--orange)">9</span>
+          </div>
+        </div>
+      </div>
     </div>
-    {% endif %}
 
   </div>
 </div>
@@ -388,6 +436,76 @@
           btn.disabled = false;
           btn.textContent = '↺ إعادة المحاولة';
         });
+    });
+  }
+
+  // ---- Setup wizard ----
+  var wizBtn  = document.getElementById('wiz-btn');
+  var wizTok  = document.getElementById('wiz-token');
+  var wizErr  = document.getElementById('wiz-err');
+  var chatList = document.getElementById('chat-list');
+
+  function typeLabel(t) {
+    if (t === 'group' || t === 'supergroup') return 'مجموعة';
+    if (t === 'channel') return 'قناة';
+    if (t === 'private') return 'خاص';
+    return t || '—';
+  }
+
+  if (wizBtn) {
+    wizBtn.addEventListener('click', function () {
+      var tok = wizTok ? wizTok.value.trim() : '';
+      wizErr.style.display = 'none';
+      chatList.style.display = 'none';
+      chatList.innerHTML = '';
+      if (!tok) { wizErr.textContent = 'أدخل توكن البوت أولاً'; wizErr.style.display='block'; return; }
+      wizBtn.disabled = true;
+      wizBtn.textContent = '⏳ جاري البحث…';
+      fetch('/api/telegram/find-chats', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({token: tok})
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        wizBtn.disabled = false;
+        wizBtn.textContent = '🔍 ابحث عن المجموعات';
+        if (!data.ok) {
+          wizErr.textContent = '❌ ' + (data.error || 'خطأ غير معروف');
+          wizErr.style.display = 'block';
+          return;
+        }
+        if (!data.chats || data.chats.length === 0) {
+          wizErr.textContent = 'لم يجد البوت أي محادثات بعد — أضفه للمجموعة وأرسل رسالة فيها ثم أعد المحاولة';
+          wizErr.style.display = 'block';
+          return;
+        }
+        chatList.style.display = 'flex';
+        data.chats.forEach(function(c){
+          var item = document.createElement('div');
+          item.className = 'chat-item';
+          item.innerHTML =
+            '<div><div class="chat-name">' + (c.title || 'بدون اسم') + '</div>' +
+            '<div class="chat-meta">' + typeLabel(c.type) + ' &nbsp;|&nbsp; ID: ' + c.id + '</div></div>' +
+            '<button class="copy-btn" data-id="' + c.id + '">نسخ ID</button>';
+          chatList.appendChild(item);
+        });
+        chatList.querySelectorAll('.copy-btn').forEach(function(b){
+          b.addEventListener('click', function(){
+            var id = b.getAttribute('data-id');
+            try { navigator.clipboard.writeText(id); } catch(e){}
+            b.textContent = '✓ تم النسخ';
+            b.classList.add('copied');
+            setTimeout(function(){ b.textContent = 'نسخ ID'; b.classList.remove('copied'); }, 2000);
+          });
+        });
+      })
+      .catch(function(){
+        wizBtn.disabled = false;
+        wizBtn.textContent = '🔍 ابحث عن المجموعات';
+        wizErr.textContent = '❌ خطأ في الاتصال بالخادم';
+        wizErr.style.display = 'block';
+      });
     });
   }
 
