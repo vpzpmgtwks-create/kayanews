@@ -261,6 +261,8 @@
       <div class="tg-card">
         <div class="tg-card-title">معاينة الرسالة</div>
         <div class="preview-box" id="msg-preview">جاري تحميل المعاينة…</div>
+        <button class="wizard-btn" id="copy-msg-btn" style="margin-top:12px;width:100%">📋 نسخ الرسالة</button>
+        <div id="copy-msg-res" style="display:none;margin-top:8px;font-size:13px;font-weight:800;color:var(--up);text-align:center">✓ تم النسخ — الصقها في مجموعتك!</div>
       </div>
 
     </div>
@@ -402,6 +404,22 @@
 
   var preview = document.getElementById('msg-preview');
   if (preview) preview.textContent = lines.join('\n');
+
+  // Copy message button
+  var copyBtn = document.getElementById('copy-msg-btn');
+  var copyRes = document.getElementById('copy-msg-res');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', function () {
+      var text = preview ? preview.textContent : lines.join('\n');
+      try { navigator.clipboard.writeText(text); } catch(e) {}
+      copyRes.style.display = 'block';
+      copyBtn.textContent = '✓ تم النسخ';
+      setTimeout(function () {
+        copyBtn.textContent = '📋 نسخ الرسالة';
+        copyRes.style.display = 'none';
+      }, 3000);
+    });
+  }
 
   // Send now button
   var btn = document.getElementById('send-btn');
