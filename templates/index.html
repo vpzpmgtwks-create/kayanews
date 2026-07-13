@@ -88,6 +88,7 @@
       <!-- Hero content -->
       <div class="hero-content">
         <span class="badge"><span class="badge-dot"></span> نشرة السوق · تحديث لحظي</span>
+        <div class="market-timer" id="market-timer">⏳ جاري...</div>
         <div class="hero-clock" id="hero-clock">
           <svg class="hc-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
           <span class="hc-time" id="hc-time">—</span>
@@ -171,11 +172,15 @@
 
     <!-- Digest -->
     <section class="section reveal" id="markets">
-      <div class="sec-head"><span class="sec-num">٠١</span><div class="eyebrow">الزبدة · أهم النقاط</div></div>
+      <div class="sec-head"><span class="sec-num">٠١</span><div class="eyebrow">الزبدة · أهم النقاط</div><button class="focus-btn" id="btn-focus" title="عرض الزبدة فقط">⚡ تركيز</button></div>
       <div class="panel digest">
         <div class="zubda" id="zubda"></div>
         <div class="whale" id="whale" style="display:none"></div>
         <ul class="points" id="points"></ul>
+        <div class="notes-wrap">
+          <div class="notes-lbl">📝 ملاحظاتي اليوم</div>
+          <textarea id="notes-ta" class="notes-ta" placeholder="اكتب تحليلك أو ملاحظاتك هنا — تُحفظ تلقائياً..."></textarea>
+        </div>
         <div class="report-share-row" id="report-share-row" style="display:none">
           <button class="share-report-btn" id="btn-copy-report">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
@@ -238,6 +243,8 @@
         </div>
         <span class="news-filter-info" id="news-filter-info"></span>
         <span class="news-kbd">اضغط <kbd>/</kbd> للبحث السريع</span>
+        <button class="news-ctrl-btn" id="btn-news-sort">↕ الترتيب</button>
+        <button class="news-ctrl-btn" id="btn-news-compact">📰 مختصر</button>
       </div>
       <div class="grid news-cols">
         <div class="card">
@@ -270,11 +277,15 @@
     <div class="foot">
       آخر تحديث: <b id="gen-at">—</b> · المصادر أخبار RSS مجانية + Yahoo Finance + مؤشرات الخوف والطمع ·
       <b>نشرة السوق</b>
+      <span class="visit-streak" id="visit-streak"></span>
     </div>
   </div>
 </div>
 
 <div class="fabs">
+  <button class="fab fab-pause" id="fab-pause" aria-label="إيقاف التحديث" title="إيقاف التحديث التلقائي">
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+  </button>
   <button class="fab fab-news" id="fab-news" aria-label="طباعة الأخبار فقط" title="طباعة الأخبار فقط">
     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V4a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v16a2 2 0 0 1-2 2 2 2 0 0 1-2-2V9a1 1 0 0 1 1-1h2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
   </button>
@@ -287,6 +298,31 @@
   <button class="fab totop" id="totop" aria-label="العودة إلى الأعلى" title="أعلى الصفحة">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
   </button>
+</div>
+
+<div class="status-bar" id="status-bar">
+  <div class="sb-item">
+    <span class="sb-label">التقييم</span>
+    <span class="sb-val" id="sb-score">—</span>
+  </div>
+  <div class="sb-sep"></div>
+  <div class="sb-item">
+    <span class="sb-label">VIX</span>
+    <span class="sb-val" id="sb-vix">—</span>
+  </div>
+  <div class="sb-sep"></div>
+  <span id="sb-mood-lbl">—</span>
+  <div class="sb-gap"></div>
+  <div class="font-ctrl">
+    <button id="btn-font-minus" title="تصغير الخط">A−</button>
+    <button id="btn-font-plus"  title="تكبير الخط">A+</button>
+  </div>
+  <div class="sb-sep"></div>
+  <div class="sb-item">
+    <span class="sb-label">تحديث</span>
+    <span class="sb-val" id="sb-cd">—</span>
+    <span class="sb-label">ث</span>
+  </div>
 </div>
 
 <script>

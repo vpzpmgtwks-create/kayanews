@@ -41,6 +41,11 @@
   <section class="card mt">
     <div class="eyebrow">📑 سجلّ التقارير · {{ rows|length }} يوم محفوظ</div>
     {% if rows %}
+    <div class="hist-search-wrap">
+      <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="hist-search" class="hist-search-inp" placeholder="ابحث في الزبدة والتواريخ والأوصاف...">
+    </div>
+    <p class="hist-no-res" id="hist-no-res">لا توجد نتائج مطابقة</p>
     <div class="table-wrap mt">
       <table class="hist">
         <thead>
@@ -82,7 +87,10 @@
     {% endif %}
   </section>
 
-  <div class="foot"><b>Market Brief</b> · السجل يُحدَّث تلقائياً مرة كل يوم</div>
+  <div class="foot">
+    <b>Market Brief</b> · السجل يُحدَّث تلقائياً مرة كل يوم
+    <span class="visit-streak" id="hist-streak"></span>
+  </div>
 </div>
 
 <script>
@@ -123,6 +131,39 @@
       });
     }
   }
+
+  // ── History search ─────────────────────────────────────────────────────────
+  var histSrch = document.getElementById("hist-search");
+  var histNoRes = document.getElementById("hist-no-res");
+  if (histSrch) {
+    histSrch.addEventListener("input", function () {
+      var q = histSrch.value.trim().toLowerCase();
+      var rows = document.querySelectorAll("table.hist tbody tr");
+      var vis = 0;
+      rows.forEach(function (row) {
+        var match = !q || row.textContent.toLowerCase().includes(q);
+        row.style.display = match ? "" : "none";
+        if (match) vis++;
+      });
+      if (histNoRes) histNoRes.style.display = (q && vis === 0) ? "" : "none";
+    });
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "/" && document.activeElement !== histSrch) {
+        e.preventDefault(); histSrch.focus();
+      }
+    });
+  }
+
+  // ── Visit streak ───────────────────────────────────────────────────────────
+  (function () {
+    var el = document.getElementById("hist-streak"); if (!el) return;
+    var key = "mb-streak-v1", today = new Date().toISOString().split("T")[0], d;
+    try { d = JSON.parse(localStorage.getItem(key)); } catch (e) {}
+    if (d && d.count) {
+      var fire = d.streak > 1 ? '<span class="streak-fire">🔥</span> ' + d.streak + " أيام متتالية · " : "";
+      el.innerHTML = fire + "زيارة #" + d.count;
+    }
+  })();
 
   // ── Export CSV ─────────────────────────────────────────────────────────────
   var expBtn = document.getElementById("hist-export-btn");
