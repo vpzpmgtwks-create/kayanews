@@ -543,35 +543,6 @@
     });
   }
 
-  // ---- lazy-load TradingView widgets -----------------------------------
-  // Scripts are stored as application/json so they don't run at parse time.
-  // We inject real <script> elements only when the section scrolls into view,
-  // cutting ~900 KB of external script from the critical path.
-  function _loadTV(section) {
-    var theme = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
-    section.querySelectorAll("script.tv-lazy").forEach(function (tmpl) {
-      try {
-        var cfg = JSON.parse(tmpl.textContent);
-        cfg.colorTheme = theme;
-        var s = document.createElement("script");
-        s.type = "text/javascript";
-        s.async = true;
-        s.src = tmpl.getAttribute("data-src");
-        s.textContent = JSON.stringify(cfg);
-        tmpl.parentNode.replaceChild(s, tmpl);
-      } catch (e) {}
-    });
-  }
-
-  function setupLazyTV() {
-    var sec = $("fear-live"); if (!sec) return;
-    if (!("IntersectionObserver" in window)) { _loadTV(sec); return; }
-    var io = new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting) { _loadTV(sec); io.disconnect(); }
-    }, { rootMargin: "400px" });
-    io.observe(sec);
-  }
-
   // ---- print buttons (FABs) --------------------------------------------
   // News-only print: tag <body>, so @media print isolates the news section,
   // then untag once the print dialog closes (afterprint).
@@ -601,7 +572,6 @@
     setupMenu();
     setupTop();
     setupPrint();
-    setupLazyTV();
     startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }

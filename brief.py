@@ -26,6 +26,7 @@ import requests
 # --------------------------------------------------------------------------- #
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
+_TELEGRAM_LOG: list[dict] = []   # in-memory send history (last 100 entries)
 
 
 def send_telegram_report(report: dict) -> bool:
@@ -81,6 +82,8 @@ def send_telegram_report(report: dict) -> bool:
 
     lines += ["", "🔗 [التقرير الكامل](https://kayanews.onrender.com)"]
 
+    success = False
+    error_msg = ""
     try:
         resp = requests.post(
             f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
@@ -92,9 +95,29 @@ def send_telegram_report(report: dict) -> bool:
             },
             timeout=12,
         )
-        return resp.ok
-    except Exception:  # noqa: BLE001
-        return False
+        success = resp.ok
+        if not resp.ok:
+            try:
+                error_msg = resp.json().get("description", resp.text[:120])
+            except Exception:
+                error_msg = resp.text[:120]
+    except Exception as e:  # noqa: BLE001
+        error_msg = str(e)[:120]
+
+    _TELEGRAM_LOG.append({
+        "ts": int(time.time()),
+        "ok": success,
+        "chat_id": TELEGRAM_CHAT_ID,
+        "error": error_msg,
+    })
+    if len(_TELEGRAM_LOG) > 100:
+        del _TELEGRAM_LOG[:-100]
+    return success
+
+
+def get_telegram_log() -> list[dict]:
+    """Return recent Telegram send log, newest first."""
+    return list(reversed(_TELEGRAM_LOG))
 
 
 # --------------------------------------------------------------------------- #

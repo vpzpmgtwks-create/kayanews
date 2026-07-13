@@ -52,6 +52,35 @@ def api_history():
     return jsonify(brief.get_history())
 
 
+@app.route("/telegram")
+def telegram_page():
+    report = brief.build_report()
+    send_hour = int(os.environ.get("TELEGRAM_SEND_HOUR", "9"))
+    now = datetime.datetime.now()
+    next_send = now.replace(hour=send_hour, minute=0, second=0, microsecond=0)
+    if next_send <= now:
+        next_send += datetime.timedelta(days=1)
+    status = {
+        "configured": bool(brief.TELEGRAM_TOKEN and brief.TELEGRAM_CHAT_ID),
+        "token_set": bool(brief.TELEGRAM_TOKEN),
+        "chat_id": brief.TELEGRAM_CHAT_ID or "",
+        "send_hour": send_hour,
+        "next_send": next_send.strftime("%Y-%m-%d %H:%M"),
+        "log": brief.get_telegram_log()[:20],
+    }
+    return render_template("telegram.html", status=status, r=report)
+
+
+@app.route("/api/telegram/send", methods=["POST"])
+def telegram_send_now():
+    report = brief.build_report()
+    ok = brief.send_telegram_report(report)
+    return jsonify({
+        "ok": ok,
+        "message": "✅ تم الإرسال بنجاح!" if ok else "❌ فشل الإرسال — تحقق من الإعدادات",
+    })
+
+
 # --------------------------------------------------------------------------- #
 # Background refresher — keeps data fresh even if nobody is polling
 # --------------------------------------------------------------------------- #

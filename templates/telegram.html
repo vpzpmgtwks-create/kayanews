@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>منصة Telegram — نشرة السوق</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    /* ---- Telegram page extras ---- */
+    .tg-page { max-width: 860px; margin: 0 auto; padding: 22px 18px 80px; }
+
+    .tg-hero {
+      background: linear-gradient(135deg, #229ed9 0%, #1a8cc4 60%, #1077a8 100%);
+      border-radius: var(--radius); padding: 28px 28px 24px;
+      color: #fff; margin-bottom: 24px; position: relative; overflow: hidden;
+    }
+    .tg-hero::before {
+      content: "✈";
+      position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+      font-size: 90px; opacity: .08; line-height: 1;
+    }
+    .tg-hero h1 { font-size: 22px; font-weight: 800; margin: 0 0 6px; }
+    .tg-hero p  { font-size: 14px; opacity: .85; margin: 0; font-weight: 500; }
+
+    .tg-status-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 800;
+      margin-top: 14px;
+    }
+    .tg-status-badge.ok  { background: rgba(255,255,255,.22); color: #fff; }
+    .tg-status-badge.err { background: rgba(255,80,60,.25);   color: #ffcdc8; }
+    .tg-status-badge .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .tg-status-badge.ok  .dot { background: #7fffd4; box-shadow: 0 0 0 3px rgba(127,255,212,.25); }
+    .tg-status-badge.err .dot { background: #ff9090; }
+
+    .tg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 22px; }
+    @media (max-width: 640px) { .tg-grid { grid-template-columns: 1fr; } }
+
+    .tg-card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow-s);
+    }
+    .tg-card-title {
+      font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--orange); display: flex; align-items: center; gap: 8px; margin-bottom: 16px;
+    }
+    .tg-card-title::before { content: ""; width: 18px; height: 3px; border-radius: 3px; background: var(--orange); }
+
+    /* Config rows */
+    .cfg-row { display: flex; justify-content: space-between; align-items: center;
+               padding: 10px 0; border-bottom: 1px dashed var(--line); font-size: 14px; }
+    .cfg-row:last-child { border-bottom: none; }
+    .cfg-key { color: var(--ink-2); font-weight: 700; }
+    .cfg-val { font-weight: 800; color: var(--ink); font-size: 13px; }
+    .cfg-val.set   { color: var(--up); }
+    .cfg-val.unset { color: var(--down); }
+
+    /* Send now card */
+    .send-card { margin-bottom: 22px; }
+    .send-card .tg-card { text-align: center; padding: 28px; }
+    .send-btn {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: #229ed9; color: #fff;
+      border: none; border-radius: 999px; cursor: pointer;
+      font-size: 16px; font-weight: 800; font-family: "Tajawal", sans-serif;
+      padding: 14px 32px; margin-top: 8px;
+      box-shadow: 0 14px 28px -12px rgba(34,158,217,.60);
+      transition: filter .2s, transform .2s;
+    }
+    .send-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-2px); }
+    .send-btn:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+    .send-btn.err { background: var(--down); box-shadow: 0 14px 28px -12px rgba(209,68,58,.50); }
+    .send-result {
+      margin-top: 14px; padding: 12px 18px; border-radius: var(--radius-s);
+      font-size: 14px; font-weight: 700; display: none;
+    }
+    .send-result.ok   { background: var(--up-bg); color: var(--up); border: 1px solid rgba(18,136,90,.2); }
+    .send-result.fail { background: var(--down-bg); color: var(--down); border: 1px solid rgba(209,68,58,.2); }
+
+    /* Report preview */
+    .preview-box {
+      background: var(--surface-2); border: 1px solid var(--line);
+      border-radius: var(--radius-s); padding: 16px 18px; margin-top: 14px;
+      font-size: 13.5px; line-height: 1.8; color: var(--ink-2);
+      white-space: pre-wrap; font-family: "Tajawal", monospace;
+      max-height: 260px; overflow-y: auto;
+    }
+
+    /* Log table */
+    .log-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    .log-table th {
+      text-align: right; padding: 9px 12px; font-size: 11.5px; font-weight: 800;
+      color: var(--ink-3); text-transform: uppercase; letter-spacing: .5px;
+      border-bottom: 2px solid var(--line); background: var(--surface-2);
+    }
+    .log-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); color: var(--ink-2); }
+    .log-table tr:last-child td { border-bottom: none; }
+    .log-table tr:hover td { background: var(--surface-2); }
+    .log-ok   { color: var(--up);   font-weight: 800; }
+    .log-fail { color: var(--down); font-weight: 800; }
+    .log-empty { text-align: center; color: var(--ink-3); padding: 24px; font-weight: 700; }
+
+    /* Setup guide */
+    .setup-steps { list-style: none; margin: 0; padding: 0; }
+    .setup-steps li {
+      display: flex; gap: 14px; align-items: flex-start;
+      padding: 12px 0; border-bottom: 1px dashed var(--line); font-size: 14px;
+    }
+    .setup-steps li:last-child { border-bottom: none; }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%; flex: none;
+      background: #229ed9; color: #fff; font-weight: 800; font-size: 13px;
+      display: grid; place-items: center;
+    }
+    .setup-steps code {
+      background: var(--surface-2); border: 1px solid var(--line);
+      padding: 2px 8px; border-radius: 6px; font-size: 12px; font-family: monospace;
+      color: var(--orange);
+    }
+
+    /* Schedule row */
+    .schedule-row {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface-2); border: 1px solid var(--line);
+      border-radius: var(--radius-s); padding: 14px 16px; margin-top: 14px;
+      font-size: 14px;
+    }
+    .sch-icon { font-size: 22px; flex: none; }
+    .sch-label { color: var(--ink-3); font-weight: 700; font-size: 12px; }
+    .sch-val   { color: var(--ink);   font-weight: 800; font-size: 15px; margin-top: 2px; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="mark">ن</div>
+      <div class="name">
+        <b>نشرة السوق</b>
+        <span>منصة Telegram</span>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="/">الرئيسية</a>
+      <a href="/history">السجل</a>
+      <a href="/telegram" class="primary">📱 Telegram</a>
+    </nav>
+  </div>
+
+  <div class="tg-page">
+
+    <!-- Hero banner -->
+    <div class="tg-hero">
+      <h1>📱 منصة Telegram</h1>
+      <p>إرسال ملخص نشرة السوق اليومية تلقائياً إلى قناتك أو مجموعتك</p>
+      {% if status.configured %}
+      <div class="tg-status-badge ok">
+        <span class="dot"></span> البوت مفعّل ويعمل
+      </div>
+      {% else %}
+      <div class="tg-status-badge err">
+        <span class="dot"></span> البوت غير مُهيَّأ بعد
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Send now -->
+    <div class="send-card">
+      <div class="tg-card">
+        <div class="tg-card-title">إرسال فوري</div>
+        <p style="color:var(--ink-2);font-size:14px;margin:0 0 4px">
+          أرسل ملخص السوق الآن مباشرةً إلى القناة — بدون انتظار الموعد اليومي.
+        </p>
+        <button class="send-btn" id="send-btn" {% if not status.configured %}disabled{% endif %}>
+          ✈ إرسال الآن
+        </button>
+        {% if not status.configured %}
+        <p style="color:var(--ink-3);font-size:13px;margin-top:10px">
+          أضف TELEGRAM_BOT_TOKEN و TELEGRAM_CHAT_ID في متغيرات البيئة لتفعيل الإرسال.
+        </p>
+        {% endif %}
+        <div class="send-result" id="send-result"></div>
+      </div>
+    </div>
+
+    <!-- Config + Schedule -->
+    <div class="tg-grid">
+
+      <!-- Config -->
+      <div class="tg-card">
+        <div class="tg-card-title">الإعدادات</div>
+        <div class="cfg-row">
+          <span class="cfg-key">TELEGRAM_BOT_TOKEN</span>
+          {% if status.token_set %}
+          <span class="cfg-val set">✓ مُضبوط</span>
+          {% else %}
+          <span class="cfg-val unset">✗ غير مُضبوط</span>
+          {% endif %}
+        </div>
+        <div class="cfg-row">
+          <span class="cfg-key">TELEGRAM_CHAT_ID</span>
+          {% if status.chat_id %}
+          <span class="cfg-val set">{{ status.chat_id }}</span>
+          {% else %}
+          <span class="cfg-val unset">✗ غير مُضبوط</span>
+          {% endif %}
+        </div>
+        <div class="cfg-row">
+          <span class="cfg-key">TELEGRAM_SEND_HOUR</span>
+          <span class="cfg-val">{{ status.send_hour }}:00 (توقيت الخادم)</span>
+        </div>
+        <div class="schedule-row">
+          <span class="sch-icon">⏰</span>
+          <div>
+            <div class="sch-label">الإرسال التلقائي القادم</div>
+            <div class="sch-val">{{ status.next_send }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview -->
+      <div class="tg-card">
+        <div class="tg-card-title">معاينة الرسالة</div>
+        <div class="preview-box" id="msg-preview">جاري تحميل المعاينة…</div>
+      </div>
+
+    </div>
+
+    <!-- Send history -->
+    <div class="tg-card" style="margin-bottom:22px">
+      <div class="tg-card-title">سجل الإرسال</div>
+      {% if status.log %}
+      <div class="table-wrap">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>الوقت</th>
+              <th>القناة</th>
+              <th>الحالة</th>
+              <th>الخطأ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in status.log %}
+            <tr>
+              <td id="ts-{{ loop.index }}" data-ts="{{ entry.ts }}">{{ entry.ts }}</td>
+              <td>{{ entry.chat_id or '—' }}</td>
+              <td>
+                {% if entry.ok %}
+                <span class="log-ok">✓ نجح</span>
+                {% else %}
+                <span class="log-fail">✗ فشل</span>
+                {% endif %}
+              </td>
+              <td style="font-size:12px;color:var(--ink-3)">{{ entry.error or '—' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="log-empty">لا يوجد سجل إرسال بعد — أرسل أول رسالة!</div>
+      {% endif %}
+    </div>
+
+    <!-- Setup guide (show only if not configured) -->
+    {% if not status.configured %}
+    <div class="tg-card">
+      <div class="tg-card-title">دليل الإعداد</div>
+      <ol class="setup-steps">
+        <li>
+          <span class="step-num">١</span>
+          <div>افتح Telegram وابحث عن <strong>@BotFather</strong> ← أرسل <code>/newbot</code> ← اتبع الخطوات واحصل على <strong>Bot Token</strong></div>
+        </li>
+        <li>
+          <span class="step-num">٢</span>
+          <div>أنشئ قناة أو استخدم مجموعة موجودة ← أضف البوت كـ <strong>مشرف</strong> مع صلاحية إرسال الرسائل</div>
+        </li>
+        <li>
+          <span class="step-num">٣</span>
+          <div>احصل على Chat ID: للقنوات العامة هو <code>@اسم_القناة</code>، للخاصة استخدم <strong>@userinfobot</strong> للحصول على الـ ID الرقمي</div>
+        </li>
+        <li>
+          <span class="step-num">٤</span>
+          <div>
+            في لوحة تحكم <strong>Render</strong> → Environment → أضف:
+            <br><code>TELEGRAM_BOT_TOKEN</code> = التوكن من BotFather
+            <br><code>TELEGRAM_CHAT_ID</code> = @قناتك أو الـ ID الرقمي
+            <br><code>TELEGRAM_SEND_HOUR</code> = الساعة (٠-٢٣) للإرسال اليومي
+          </div>
+        </li>
+        <li>
+          <span class="step-num">٥</span>
+          <div>أعد نشر الموقع وعُد لهذه الصفحة ← اضغط <strong>إرسال الآن</strong> للتجربة ✈</div>
+        </li>
+      </ol>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+(function () {
+  // Format timestamps
+  document.querySelectorAll('[data-ts]').forEach(function (el) {
+    var ts = parseInt(el.getAttribute('data-ts'), 10);
+    if (!ts) return;
+    var d = new Date(ts * 1000);
+    el.textContent = d.toLocaleString('ar', {
+      month: 'short', day: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    });
+  });
+
+  // Build message preview from server data
+  var r = {{ r | tojson }};
+  var score = r.score || {};
+  var vix   = r.vix   || {};
+  var fg    = r.fear_greed_stocks || {};
+  var geo   = r.geopolitics || [];
+  var mk    = r.markets     || [];
+  var pts   = r.points      || [];
+
+  function f(v, d) {
+    d = d == null ? 1 : d;
+    return (v != null && !isNaN(v)) ? parseFloat(v).toFixed(d) : '—';
+  }
+  var lines = [
+    '📊 نشرة السوق اليومية', '',
+    '🎯 التقييم: ' + f(score.score) + '/١٠ — ' + (score.label_ar || ''),
+    '😰 VIX: ' + f(vix.current) + ' — ' + (vix.label_ar || ''),
+  ];
+  if (fg.ok) lines.push('💹 مزاج الأسهم: ' + f(fg.value, 0) + ' — ' + (fg.label_ar || ''));
+  var bl = r.bottom_line || '';
+  if (bl) lines.push('', '💡 ' + bl);
+  if (pts.length) {
+    lines.push('', '📌 النقاط الرئيسية:');
+    pts.slice(0,4).forEach(function(p){ lines.push('◆ ' + p); });
+  }
+  var tg = geo[0] ? (geo[0].title_ar || geo[0].title) : null;
+  var tm = mk[0]  ? (mk[0].title_ar  || mk[0].title)  : null;
+  if (tg || tm) {
+    lines.push('', '📰 أبرز الأخبار:');
+    if (tg) lines.push('🌍 ' + tg);
+    if (tm) lines.push('📈 ' + tm);
+  }
+  lines.push('', '🔗 kayanews.onrender.com');
+
+  var preview = document.getElementById('msg-preview');
+  if (preview) preview.textContent = lines.join('\n');
+
+  // Send now button
+  var btn = document.getElementById('send-btn');
+  var res = document.getElementById('send-result');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      btn.textContent = '⏳ جاري الإرسال…';
+      res.style.display = 'none';
+      fetch('/api/telegram/send', { method: 'POST' })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          res.textContent = data.message;
+          res.className = 'send-result ' + (data.ok ? 'ok' : 'fail');
+          res.style.display = 'block';
+          btn.textContent = data.ok ? '✓ تم الإرسال' : '✗ فشل الإرسال';
+          if (data.ok) {
+            setTimeout(function () {
+              btn.disabled = false;
+              btn.textContent = '✈ إرسال الآن';
+              setTimeout(function(){ location.reload(); }, 100);
+            }, 2000);
+          } else {
+            btn.disabled = false;
+            btn.textContent = '↺ إعادة المحاولة';
+          }
+        })
+        .catch(function () {
+          res.textContent = '❌ خطأ في الاتصال';
+          res.className = 'send-result fail';
+          res.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = '↺ إعادة المحاولة';
+        });
+    });
+  }
+
+  // Dark mode sync
+  var saved;
+  try { saved = localStorage.getItem('mb-dark'); } catch(e){}
+  var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  var dark = saved !== null ? saved === '1' : prefersDark;
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+})();
+</script>
+</body>
+</html>
