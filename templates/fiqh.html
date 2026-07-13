@@ -362,6 +362,15 @@
 
     .fcard.hidden-filter { display: none; }
 
+    /* ─── Scroll Progress Bar ─── */
+    .read-prog {
+      position: fixed; top: 0; right: 0; left: 0; height: 3px;
+      background: linear-gradient(90deg, var(--orange), var(--orange-3));
+      width: 0%; z-index: 999; transform-origin: right;
+      transition: width .08s linear;
+      pointer-events: none;
+    }
+
     @media (max-width: 540px) {
       .navpill { border-radius: 14px; }
       .nav-badge { display: none; }
@@ -370,6 +379,7 @@
   </style>
 </head>
 <body>
+<div class="read-prog" id="read-prog"></div>
 
 <!-- NAV -->
 <div class="top-nav">
@@ -1258,6 +1268,23 @@ document.getElementById('export-all').addEventListener('click', () => {
 buildStrip();
 buildCards();
 updateReadUI();
+
+// ── SCROLL PROGRESS BAR ──
+(function () {
+  var bar = document.getElementById('read-prog');
+  if (!bar) return;
+  var ticking = false;
+  function update() {
+    var total = document.body.scrollHeight - window.innerHeight;
+    var pct = total > 0 ? Math.min(100, (window.scrollY / total) * 100) : 0;
+    bar.style.width = pct.toFixed(1) + '%';
+    ticking = false;
+  }
+  window.addEventListener('scroll', function () {
+    if (!ticking) { ticking = true; requestAnimationFrame(update); }
+  }, { passive: true });
+  update();
+})();
 </script>
 </body>
 </html>

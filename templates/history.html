@@ -25,6 +25,19 @@
     </nav>
   </header>
 
+  {% if rows %}
+  <div class="hist-chart-section">
+    <div class="hist-chart-header">
+      <span class="hist-chart-title">📈 مسار التقييم اليومي — {{ rows|length }} يوم</span>
+      <button class="hist-export-btn" id="hist-export-btn">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        تصدير CSV
+      </button>
+    </div>
+    <svg id="hist-spark" class="hist-spark" viewBox="0 0 700 80" preserveAspectRatio="none" role="img" aria-label="مسار التقييم اليومي"></svg>
+  </div>
+  {% endif %}
+
   <section class="card mt">
     <div class="eyebrow">📑 سجلّ التقارير · {{ rows|length }} يوم محفوظ</div>
     {% if rows %}
@@ -71,5 +84,65 @@
 
   <div class="foot"><b>Market Brief</b> · السجل يُحدَّث تلقائياً مرة كل يوم</div>
 </div>
+
+<script>
+(function () {
+  var ROWS = {{ rows | tojson }};
+
+  // ── Sparkline ──────────────────────────────────────────────────────────────
+  var svg = document.getElementById("hist-spark");
+  if (svg && ROWS.length >= 2) {
+    var pts = ROWS.slice().reverse().filter(function (r) { return r.score != null; });
+    if (pts.length >= 2) {
+      var W = 700, H = 80, pl = 10, pr = 10, pt = 12, pb = 14;
+      var cw = W - pl - pr, ch = H - pt - pb;
+      var scores = pts.map(function (r) { return r.score; });
+      var mn = Math.min.apply(null, scores) - 0.5;
+      var mx = Math.max.apply(null, scores) + 0.5;
+      function X(i) { return pl + (i / (pts.length - 1)) * cw; }
+      function Y(v) { return pt + (1 - (v - mn) / (mx - mn)) * ch; }
+      var line = scores.map(function (v, i) { return (i ? " L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1); }).join("");
+      var area = "M" + X(0).toFixed(1) + " " + (pt + ch).toFixed(1) + " " + line.replace(/^M/, "L") + " L" + X(pts.length-1).toFixed(1) + " " + (pt+ch).toFixed(1) + " Z";
+      var lx = X(pts.length-1), ly = Y(scores[pts.length-1]);
+      var col = "#F07818";
+      var tooltips = pts.map(function (r, i) {
+        return '<circle class="hs-dot" cx="' + X(i).toFixed(1) + '" cy="' + Y(r.score).toFixed(1) + '" r="4" fill="#111" stroke="' + col + '" stroke-width="1.8" opacity="0"><title>' + r.date + ': ' + r.score + '/10</title></circle>';
+      }).join("");
+      svg.innerHTML =
+        '<defs><linearGradient id="hg" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0" stop-color="rgba(240,120,24,.28)"/>' +
+        '<stop offset="1" stop-color="rgba(240,120,24,.02)"/></linearGradient></defs>' +
+        '<path d="' + area + '" fill="url(#hg)"/>' +
+        '<path d="' + line + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+        tooltips +
+        '<circle cx="' + lx.toFixed(1) + '" cy="' + ly.toFixed(1) + '" r="5" fill="#111" stroke="' + col + '" stroke-width="2.5"/>' +
+        '<text x="' + lx.toFixed(1) + '" y="' + (ly - 8).toFixed(1) + '" text-anchor="middle" fill="' + col + '" font-size="11" font-weight="700" font-family="Tajawal,sans-serif">' + scores[scores.length-1] + '</text>';
+      svg.querySelectorAll(".hs-dot").forEach(function (el) {
+        el.addEventListener("mouseenter", function () { el.setAttribute("opacity", "1"); });
+        el.addEventListener("mouseleave", function () { el.setAttribute("opacity", "0"); });
+      });
+    }
+  }
+
+  // ── Export CSV ─────────────────────────────────────────────────────────────
+  var expBtn = document.getElementById("hist-export-btn");
+  if (expBtn && ROWS.length) {
+    expBtn.addEventListener("click", function () {
+      var cols = ["date","vix","vix_label_ar","score","score_label_ar","fg_stocks","fg_crypto","news_count","bottom_line"];
+      var head = ["التاريخ","VIX","حالة VIX","التقييم","الوصف","خوف الأسهم","خوف الكريبتو","الأخبار","الزبدة"];
+      var csv = "﻿" + head.join(",") + "\n" + ROWS.map(function (r) {
+        return cols.map(function (c) {
+          var v = r[c] == null ? "" : String(r[c]);
+          return '"' + v.replace(/"/g, '""') + '"';
+        }).join(",");
+      }).join("\n");
+      var a = document.createElement("a");
+      a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+      a.download = "market_brief_history.csv";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    });
+  }
+})();
+</script>
 </body>
 </html>

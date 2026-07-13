@@ -16,6 +16,7 @@
   var lastReport = null;          // most recent data, for re-render on focus
   var numState = new WeakMap();   // element -> last numeric value shown
   var gaugeVals = {};             // gauge id -> { v: rawValue, p: pct }
+  var newsSearchTerm = "";        // live news-search filter
 
   // ---- helpers ----------------------------------------------------------
   function $(id) { return document.getElementById(id); }
@@ -377,9 +378,107 @@
     if (g) g.innerHTML = (r.geopolitics || []).map(newsItem).join("") || emptyRow();
     if (m) m.innerHTML = (r.markets || []).map(newsItem).join("") || emptyRow();
     setText("news-count", r.news_count != null ? r.news_count : "—");
+    if (newsSearchTerm) setTimeout(filterNews, 60);
   }
   function emptyRow() {
     return '<div class="news-item"><div class="news-title" style="color:#9a988f">لا توجد أخبار متاحة حالياً</div></div>';
+  }
+
+  // ---- copy / share report -----------------------------------------------
+  function scoreEmoji(s) { return s >= 7 ? "🟢" : s >= 5 ? "🟡" : s >= 3 ? "🟠" : "🔴"; }
+
+  function formatReport(r) {
+    if (!r) return "";
+    var sc = r.score || {}, vix = r.vix || {}, fg = r.fear_greed_stocks || {};
+    var sn = sc.score, vn = vix.current;
+    var date = (r.generated_at || "").split(" ")[0] || "";
+    var lines = [
+      "📊 نشرة السوق — " + date,
+      "━━━━━━━━━━━━━━━━━━",
+      "",
+      (sn != null ? scoreEmoji(sn) : "▪") + " التقييم اليومي: " + (sn != null ? sn + "/10" : "—") + " · " + (sc.label_ar || ""),
+      "📈 VIX مؤشر الخوف: " + (vn != null ? num(vn, 1) : "—") + " (" + (vix.label_ar || "—") + ")",
+      "🎭 مزاج السوق: " + (fg.ok && fg.label_ar ? fg.label_ar : "—"),
+      ""
+    ];
+    if (r.bottom_line) { lines.push("📝 الزبدة:", r.bottom_line, ""); }
+    if (r.points && r.points.length) {
+      lines.push("📌 أبرز النقاط:");
+      r.points.forEach(function (p) { lines.push("• " + p); });
+      lines.push("");
+    }
+    lines.push("━━━━━━━━━━━━━━━━━━", "📢 قناة نشرة السوق:", "https://t.me/+qBtY37bvQow2NWZk");
+    return lines.join("\n");
+  }
+
+  function setupReportActions() {
+    var copyBtn = $("btn-copy-report");
+    var waBtn   = $("btn-wa-share");
+    var row     = $("report-share-row");
+
+    function updateShare() {
+      var text = formatReport(lastReport);
+      if (waBtn && text) waBtn.href = "https://wa.me/?text=" + encodeURIComponent(text);
+      if (row) row.style.display = "";
+    }
+    window._updateShare = updateShare;
+
+    if (copyBtn) {
+      copyBtn.addEventListener("click", function () {
+        var text = formatReport(lastReport);
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(function () {
+          var orig = copyBtn.innerHTML;
+          copyBtn.classList.add("copied");
+          copyBtn.textContent = "✅ تم النسخ!";
+          setTimeout(function () { copyBtn.classList.remove("copied"); copyBtn.innerHTML = orig; }, 2200);
+          toast("✅ تم نسخ التقرير — الصقه في واتساب أو تيليجرام");
+        }).catch(function () {});
+      });
+    }
+  }
+
+  // ---- news search ---------------------------------------------------------
+  function filterNews() {
+    var items = document.querySelectorAll(".news-item");
+    var count = 0;
+    items.forEach(function (el) {
+      var title = (el.querySelector(".news-title") || {}).textContent || "";
+      var match = !newsSearchTerm || title.includes(newsSearchTerm);
+      el.style.display = match ? "" : "none";
+      if (match) count++;
+    });
+    var info  = $("news-filter-info");
+    var clear = $("news-clear-btn");
+    if (info)  info.textContent  = newsSearchTerm ? (count + " نتيجة") : "";
+    if (clear) clear.style.display = newsSearchTerm ? "" : "none";
+  }
+
+  function setupNewsSearch() {
+    var inp   = $("news-search-inp");
+    var clear = $("news-clear-btn");
+    if (!inp) return;
+
+    inp.addEventListener("input", function () {
+      newsSearchTerm = inp.value.trim();
+      filterNews();
+    });
+    if (clear) {
+      clear.addEventListener("click", function () {
+        inp.value = ""; newsSearchTerm = "";
+        filterNews(); inp.focus();
+      });
+    }
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "/" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        inp.focus();
+        inp.scrollIntoView({ behavior: REDUCED ? "auto" : "smooth", block: "center" });
+      }
+      if (e.key === "Escape" && document.activeElement === inp) {
+        inp.blur(); inp.value = ""; newsSearchTerm = ""; filterNews();
+      }
+    });
   }
 
   // ---- "last updated" in the viewer's own local time + live relative age
@@ -418,6 +517,7 @@
     renderNews(r);
     lastGenTs = r.generated_ts || 0;
     if (lastGenTs) renderUpdated(); else setText("gen-at", r.generated_at || "");
+    if (window._updateShare) window._updateShare();
   }
 
   // ---- reveal on scroll -------------------------------------------------
@@ -572,6 +672,8 @@
     setupMenu();
     setupTop();
     setupPrint();
+    setupReportActions();
+    setupNewsSearch();
     startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }
