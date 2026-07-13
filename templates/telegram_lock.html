@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>منصة Telegram — نشرة السوق</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Tajawal", sans-serif;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: #f5f2ee; color: #0b0f1a;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #0d1017; color: #e0ddd6; }
+      .card { background: #1b1f2c; border-color: #2c3143; }
+      input { background: #0d1017; border-color: #2c3143; color: #e0ddd6; }
+    }
+    .card {
+      background: #fff; border: 1px solid #e5e1da;
+      border-radius: 20px; padding: 44px 40px; width: 100%; max-width: 380px;
+      text-align: center; box-shadow: 0 22px 60px -34px rgba(0,0,0,.18);
+    }
+    .lock-icon { font-size: 48px; margin-bottom: 16px; }
+    h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    p  { font-size: 14px; color: #888; margin-bottom: 28px; }
+    input {
+      width: 100%; padding: 14px 16px; border-radius: 12px;
+      border: 2px solid #e5e1da; font-size: 22px; font-weight: 800;
+      text-align: center; letter-spacing: 8px; outline: none;
+      font-family: monospace; transition: border-color .2s; margin-bottom: 14px;
+    }
+    input:focus { border-color: #229ed9; }
+    .err { color: #d1443a; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+    button {
+      width: 100%; padding: 14px; border-radius: 999px; border: none;
+      background: #229ed9; color: #fff; font-size: 16px; font-weight: 800;
+      font-family: "Tajawal", sans-serif; cursor: pointer; transition: filter .2s;
+    }
+    button:hover { filter: brightness(1.1); }
+    .back { display: block; margin-top: 18px; font-size: 13px; color: #888; text-decoration: none; }
+    .back:hover { color: #229ed9; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="lock-icon">🔒</div>
+    <h1>منطقة خاصة</h1>
+    <p>هذه الصفحة مخصصة للمشرف فقط</p>
+    {% if error %}
+    <div class="err">❌ الرقم السري غير صحيح</div>
+    {% endif %}
+    <form method="POST">
+      <input type="password" name="pin" placeholder="••••" maxlength="10"
+             inputmode="numeric" autofocus autocomplete="off">
+      <button type="submit">دخول</button>
+    </form>
+    <a href="/" class="back">← الرجوع للرئيسية</a>
+  </div>
+</body>
+</html>

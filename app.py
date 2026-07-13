@@ -9,12 +9,14 @@ import os
 import threading
 import time
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, session
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 import brief
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("FLASK_SECRET", "mb-secret-2024-change-me")
+ADMIN_PIN = os.environ.get("ADMIN_PIN", "")
 
 REFRESH_SECONDS = int(os.environ.get("MB_REFRESH_SECONDS", "60"))
 
@@ -52,8 +54,19 @@ def api_history():
     return jsonify(brief.get_history())
 
 
-@app.route("/telegram")
+@app.route("/telegram", methods=["GET", "POST"])
 def telegram_page():
+    # PIN check
+    if ADMIN_PIN:
+        if request.method == "POST":
+            entered = (request.form.get("pin") or "").strip()
+            if entered == ADMIN_PIN:
+                session["tg_admin"] = True
+            else:
+                return render_template("telegram_lock.html", error=True)
+        if not session.get("tg_admin"):
+            return render_template("telegram_lock.html", error=False)
+
     report = brief.build_report()
     send_hour = int(os.environ.get("TELEGRAM_SEND_HOUR", "9"))
     now = datetime.datetime.now()
@@ -69,6 +82,13 @@ def telegram_page():
         "log": brief.get_telegram_log()[:20],
     }
     return render_template("telegram.html", status=status, r=report)
+
+
+@app.route("/telegram/logout")
+def telegram_logout():
+    session.pop("tg_admin", None)
+    from flask import redirect, url_for
+    return redirect(url_for("telegram_page"))
 
 
 @app.route("/api/telegram/send", methods=["POST"])
