@@ -171,6 +171,13 @@ a { color: inherit; text-decoration: none; }
   transition: color .2s var(--ease);
 }
 .nav-links a:hover { color: var(--orange); }
+.tg-join-btn {
+  background: #229ed9 !important; color: #fff !important;
+  padding: 6px 16px; border-radius: 999px; font-weight: 800 !important;
+  font-size: 13px !important; white-space: nowrap;
+  transition: filter .2s !important;
+}
+.tg-join-btn:hover { filter: brightness(1.12); color: #fff !important; }
 .ndot { width: 5px; height: 5px; border-radius: 50%; background: var(--ink); display: inline-block; }
 @media (min-width: 860px) { .nav-links { display: flex; } }
 
