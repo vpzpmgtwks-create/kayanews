@@ -34,7 +34,7 @@
     if (v == null || isNaN(v)) return "—";
     return (Number(v) >= 0 ? "+" : "") + num(v, d);
   }
-  function sentColor(s) { return s > 0 ? "#12885a" : s < 0 ? "#d1443a" : "#ef4d23"; }
+  function sentColor(s) { return s > 0 ? "#22C97A" : s < 0 ? "#E05050" : "#F07818"; }
   function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
   // easeOutExpo — long, gentle deceleration for a premium settle
   function easeOutExpo(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t); }
@@ -80,7 +80,7 @@
       var x2 = cx + rO * Math.cos(a), y2 = cy + rO * Math.sin(a);
       s += '<line x1="' + x1.toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' +
         x2.toFixed(1) + '" y2="' + y2.toFixed(1) +
-        '" stroke="#e0ddd6" stroke-width="2.6" stroke-linecap="round"/>';
+        '" stroke="#252525" stroke-width="2.6" stroke-linecap="round"/>';
     }
     s += '<text x="100" y="97" text-anchor="middle" font-size="26" font-weight="700" ' +
       'fill="currentColor" font-family="Tajawal,sans-serif"></text>';
@@ -91,7 +91,7 @@
   function paintGauge(el, pct, centerText, color) {
     var g = ensureGauge(el), N = g.lines.length;
     var active = Math.round(Math.max(0, Math.min(100, pct)) / 100 * N);
-    for (var i = 0; i < N; i++) g.lines[i].setAttribute("stroke", i < active ? color : "#e0ddd6");
+    for (var i = 0; i < N; i++) g.lines[i].setAttribute("stroke", i < active ? color : "#252525");
     if (g.text) g.text.textContent = centerText;
   }
 
@@ -129,10 +129,10 @@
     var el = $(id); if (!el) return;
     var up = change > 0, down = change < 0;
     var good = up ? upIsGood : down ? !upIsGood : null;
-    var color = good == null ? "#8a8a8a" : good ? "#12885a" : "#d1443a";
-    var bg = good == null ? "#f0efec" : good ? "#e7f6ee" : "#fdeceb";
+    var color = good == null ? "#888888" : good ? "#22C97A" : "#E05050";
+    var bg = good == null ? "rgba(60,60,60,.35)" : good ? "rgba(34,201,122,.12)" : "rgba(224,80,80,.12)";
     var icon = up ? TREND_UP : down ? TREND_DOWN : "";
-    el.style.color = color; el.style.background = bg;
+    el.style.color = color; el.style.background = bg; el.style.borderColor = "transparent";
     el.innerHTML = icon + "<span>" + esc(text) + "</span>";
   }
 
@@ -154,7 +154,7 @@
     for (var k = 0; k <= 2; k++) {
       var gy = (pt + ch * k / 2).toFixed(1);
       grid += '<line x1="' + pl + '" y1="' + gy + '" x2="' + (W - pr) + '" y2="' + gy +
-        '" stroke="#eee7df" stroke-width="1"/>';
+        '" stroke="#1e1e1e" stroke-width="1"/>';
     }
     var line = "";
     h.forEach(function (v, i) { line += (i ? " L" : "M") + X(i).toFixed(1) + " " + Y(v).toFixed(1); });
@@ -170,7 +170,7 @@
       '<path class="spark-area" d="' + area + '" fill="url(#vg)"/>' +
       '<path class="spark-line" d="' + line + '" fill="none" stroke="' + color +
       '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>' +
-      '<circle class="spark-dot" cx="' + lx + '" cy="' + ly + '" r="5" fill="#fff" stroke="' +
+      '<circle class="spark-dot" cx="' + lx + '" cy="' + ly + '" r="5" fill="#111111" stroke="' +
       color + '" stroke-width="3"/>';
 
     var path = el.querySelector(".spark-line");
@@ -233,9 +233,9 @@
     el.style.display = "inline-flex";
     var idx = ns.index, pos = ns.pos || 0, neg = ns.neg || 0;
     var up = idx > 2, down = idx < -2;
-    var color = up ? "#12885a" : down ? "#d1443a" : "#8a8a8a";
-    var bg = up ? "#e7f6ee" : down ? "#fdeceb" : "#f0efec";
-    el.style.color = color; el.style.background = bg;
+    var color = up ? "#22C97A" : down ? "#E05050" : "#888888";
+    var bg = up ? "rgba(34,201,122,.12)" : down ? "rgba(224,80,80,.12)" : "rgba(60,60,60,.35)";
+    el.style.color = color; el.style.background = bg; el.style.borderColor = "transparent";
     var sign = idx > 0 ? "+" : "";
     el.title = "مشاعر الأخبار: " + sign + num(idx, 0) + " من ١٠٠ — " +
       pos + " خبر إيجابي مقابل " + neg + " سلبي";
@@ -537,7 +537,7 @@
     var saved;
     try { saved = localStorage.getItem(DARK_KEY); } catch (e) {}
     var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
-    applyTheme(saved !== null ? saved === "1" : prefersDark);
+    applyTheme(saved !== "0");  /* default to dark (black) unless explicitly set light */
     btn.addEventListener("click", function () {
       applyTheme(document.documentElement.getAttribute("data-theme") !== "dark");
     });

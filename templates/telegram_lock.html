@@ -11,37 +11,35 @@
     body {
       font-family: "Tajawal", sans-serif;
       min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      background: #f5f2ee; color: #0b0f1a;
-    }
-    @media (prefers-color-scheme: dark) {
-      body { background: #0d1017; color: #e0ddd6; }
-      .card { background: #1b1f2c; border-color: #2c3143; }
-      input { background: #0d1017; border-color: #2c3143; color: #e0ddd6; }
+      background: #070707; color: #EDE8E2;
     }
     .card {
-      background: #fff; border: 1px solid #e5e1da;
-      border-radius: 20px; padding: 44px 40px; width: 100%; max-width: 380px;
-      text-align: center; box-shadow: 0 22px 60px -34px rgba(0,0,0,.18);
+      background: #111111; border: 1px solid rgba(240,120,24,.2);
+      border-radius: 24px; padding: 44px 40px; width: 100%; max-width: 380px;
+      text-align: center;
+      box-shadow: 0 22px 60px rgba(0,0,0,.9), 0 0 60px rgba(240,120,24,.04);
     }
     .lock-icon { font-size: 48px; margin-bottom: 16px; }
     h1 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
-    p  { font-size: 14px; color: #888; margin-bottom: 28px; }
+    p  { font-size: 14px; color: #7A7268; margin-bottom: 28px; }
     input {
       width: 100%; padding: 14px 16px; border-radius: 12px;
-      border: 2px solid #e5e1da; font-size: 22px; font-weight: 800;
+      border: 1px solid #2a2a2a; font-size: 22px; font-weight: 800;
       text-align: center; letter-spacing: 8px; outline: none;
-      font-family: monospace; transition: border-color .2s; margin-bottom: 14px;
+      font-family: monospace; transition: border-color .2s;
+      margin-bottom: 14px; background: #191919; color: #EDE8E2;
     }
-    input:focus { border-color: #229ed9; }
-    .err { color: #d1443a; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
+    input:focus { border-color: #F07818; box-shadow: 0 0 0 4px rgba(240,120,24,.14); }
+    .err { color: #E05050; font-size: 13px; font-weight: 700; margin-bottom: 12px; }
     button {
       width: 100%; padding: 14px; border-radius: 999px; border: none;
-      background: #229ed9; color: #fff; font-size: 16px; font-weight: 800;
+      background: #F07818; color: #fff; font-size: 16px; font-weight: 800;
       font-family: "Tajawal", sans-serif; cursor: pointer; transition: filter .2s;
+      box-shadow: 0 14px 28px -16px rgba(240,120,24,.7);
     }
     button:hover { filter: brightness(1.1); }
-    .back { display: block; margin-top: 18px; font-size: 13px; color: #888; text-decoration: none; }
-    .back:hover { color: #229ed9; }
+    .back { display: block; margin-top: 18px; font-size: 13px; color: #7A7268; text-decoration: none; }
+    .back:hover { color: #F07818; }
   </style>
 </head>
 <body>
