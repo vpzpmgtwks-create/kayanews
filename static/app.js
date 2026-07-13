@@ -83,7 +83,7 @@
         '" stroke="#e0ddd6" stroke-width="2.6" stroke-linecap="round"/>';
     }
     s += '<text x="100" y="97" text-anchor="middle" font-size="26" font-weight="700" ' +
-      'fill="#0b0f1a" font-family="Amiri,serif"></text>';
+      'fill="currentColor" font-family="Tajawal,sans-serif"></text>';
     el.innerHTML = s;
     el._g = { lines: el.querySelectorAll("line"), text: el.querySelector("text") };
     return el._g;
@@ -520,19 +520,88 @@
     setInterval(paint, 1000);
   }
 
-  // ---- print button (FAB) ----------------------------------------------
+  // ---- dark mode toggle ------------------------------------------------
+  var MOON_SVG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  var SUN_SVG  = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>';
+  var DARK_KEY = "mb-dark";
+
+  function applyTheme(dark) {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    var btn = $("fab-dark");
+    if (btn) btn.innerHTML = dark ? SUN_SVG : MOON_SVG;
+    try { localStorage.setItem(DARK_KEY, dark ? "1" : "0"); } catch (e) {}
+  }
+
+  function setupDark() {
+    var btn = $("fab-dark"); if (!btn) return;
+    var saved;
+    try { saved = localStorage.getItem(DARK_KEY); } catch (e) {}
+    var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    applyTheme(saved !== null ? saved === "1" : prefersDark);
+    btn.addEventListener("click", function () {
+      applyTheme(document.documentElement.getAttribute("data-theme") !== "dark");
+    });
+  }
+
+  // ---- lazy-load TradingView widgets -----------------------------------
+  // Scripts are stored as application/json so they don't run at parse time.
+  // We inject real <script> elements only when the section scrolls into view,
+  // cutting ~900 KB of external script from the critical path.
+  function _loadTV(section) {
+    var theme = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    section.querySelectorAll("script.tv-lazy").forEach(function (tmpl) {
+      try {
+        var cfg = JSON.parse(tmpl.textContent);
+        cfg.colorTheme = theme;
+        var s = document.createElement("script");
+        s.type = "text/javascript";
+        s.async = true;
+        s.src = tmpl.getAttribute("data-src");
+        s.textContent = JSON.stringify(cfg);
+        tmpl.parentNode.replaceChild(s, tmpl);
+      } catch (e) {}
+    });
+  }
+
+  function setupLazyTV() {
+    var sec = $("fear-live"); if (!sec) return;
+    if (!("IntersectionObserver" in window)) { _loadTV(sec); return; }
+    var io = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) { _loadTV(sec); io.disconnect(); }
+    }, { rootMargin: "400px" });
+    io.observe(sec);
+  }
+
+  // ---- print buttons (FABs) --------------------------------------------
+  // News-only print: tag <body>, so @media print isolates the news section,
+  // then untag once the print dialog closes (afterprint).
+  function printNewsOnly() {
+    document.body.classList.add("print-news");
+    var cleanup = function () {
+      document.body.classList.remove("print-news");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+  }
   function setupPrint() {
     var b = $("fab-print");
     if (b) b.addEventListener("click", function () { window.print(); });
+    var n = $("fab-news");
+    if (n) n.addEventListener("click", printNewsOnly);
+    var navn = $("nav-print-news");
+    if (navn) navn.addEventListener("click", function (e) { e.preventDefault(); printNewsOnly(); });
   }
 
   // ---- boot -------------------------------------------------------------
   document.addEventListener("DOMContentLoaded", function () {
     syncStill();
+    setupDark();
     setupReveal();
     setupMenu();
     setupTop();
     setupPrint();
+    setupLazyTV();
     startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }

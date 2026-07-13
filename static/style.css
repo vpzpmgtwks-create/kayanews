@@ -6,8 +6,6 @@
    No continuous CSS animations — only the native muted video moves on its own.
    Fonts: Tajawal / Inter (UI) + Amiri (serif display & numbers).
  * ========================================================================== */
-@property --p { syntax: "<number>"; initial-value: 0; inherits: false; }
-
 :root {
   /* Convix palette */
   --orange:   #ef4d23;
@@ -43,6 +41,25 @@
   --ease-spring:cubic-bezier(.34, 1.4, .5, 1);
 }
 
+/* ===== DARK MODE VARIABLES ===== */
+[data-theme="dark"] {
+  --page:      #0d1017;
+  --hero-bg:   #131820;
+  --tray:      #151a24;
+  --surface:   #1b1f2c;
+  --surface-2: #1f2430;
+  --line:      #2c3143;
+  --line-2:    #363d55;
+  --ink:       #e0ddd6;
+  --ink-2:     #9896a8;
+  --ink-3:     #62637a;
+  --dark:      #e0ddd6;
+  --up-bg:     rgba(18,136,90,.18);
+  --down-bg:   rgba(209,68,58,.18);
+  --shadow:    0 22px 60px -34px rgba(0,0,0,.65);
+  --shadow-s:  0 6px 20px -14px rgba(0,0,0,.50);
+}
+
 /* Smooth in-page scrolling for the nav anchors */
 html { scroll-behavior: smooth; }
 
@@ -50,7 +67,7 @@ html { scroll-behavior: smooth; }
 html, body { margin: 0; padding: 0; }
 
 body {
-  font-family: "Tajawal", "Inter", system-ui, "Segoe UI", sans-serif;
+  font-family: "Tajawal", system-ui, "Segoe UI", "Tahoma", "Arial", sans-serif;
   color: var(--ink);
   background: var(--page);
   direction: rtl;
@@ -63,7 +80,6 @@ body {
 
 h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: 0; }
 a { color: inherit; text-decoration: none; }
-.display, .serif { font-family: "Amiri", "Tajawal", serif; }
 
 .page { padding: 12px; }
 @media (min-width: 640px) { .page { padding: 16px; } }
@@ -74,34 +90,34 @@ a { color: inherit; text-decoration: none; }
 .hero {
   position: relative;
   width: 100%;
-  /* Auto height with a full-viewport floor: the hero grows to fully contain
-     the dashboard tray instead of clipping it. */
   min-height: calc(100vh - 24px);
   overflow: hidden;
-  background: var(--hero-bg);
   border-radius: 22px;
+  background:
+    radial-gradient(ellipse 110% 55% at 65% 30%, rgba(239,77,35,.10) 0%, transparent 65%),
+    linear-gradient(165deg, #c5bfb5 0%, #dcd8d2 35%, #e8e3dd 100%);
+}
+[data-theme="dark"] .hero {
+  background:
+    radial-gradient(ellipse 110% 55% at 65% 30%, rgba(239,77,35,.30) 0%, transparent 60%),
+    linear-gradient(165deg, #09090f 0%, #131720 50%, #1a1f2e 100%);
 }
 @media (min-width: 640px) { .hero { min-height: calc(100vh - 32px); border-radius: 28px; } }
 
-.hero-video {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  object-fit: cover; pointer-events: none;
-  z-index: 0; border-radius: inherit;
-}
 .hero-overlay {
   position: absolute; inset: 0; z-index: 1; border-radius: inherit;
-  /* Calm, legible wash: a soft cool tint up top for the nav, a clear middle
-     that lets the video breathe, and a gentle fade into the page below so the
-     dashboard tray settles in without a hard edge. */
   background:
     linear-gradient(180deg,
-      rgba(16,20,30,.20) 0%,
-      rgba(16,20,30,.05) 16%,
-      rgba(255,255,255,0) 34%,
-      rgba(243,241,237,.30) 66%,
-      rgba(243,241,237,.82) 100%),
-    radial-gradient(120% 60% at 50% 30%, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 60%);
+      rgba(16,20,30,.14) 0%,
+      transparent 28%,
+      rgba(241,239,234,.85) 100%);
+}
+[data-theme="dark"] .hero-overlay {
+  background:
+    linear-gradient(180deg,
+      rgba(0,0,0,.28) 0%,
+      transparent 28%,
+      rgba(13,16,23,.90) 100%);
 }
 .hero-fg {
   position: relative; z-index: 2;
@@ -116,7 +132,6 @@ a { color: inherit; text-decoration: none; }
 @keyframes trayUp   { from { opacity: 0; transform: translate3d(0,54px,0); } to { opacity: 1; transform: none; } }
 @keyframes softIn   { from { opacity: 0; } to { opacity: 1; } }
 
-.hero-video { animation: softIn 1.4s ease both; }
 .nav-wrap    { animation: navDrop .8s var(--ease-out) both; }
 .badge       { animation: popIn .75s var(--ease-out) both .12s; will-change: transform, opacity; }
 .hl          { animation: riseUp .95s var(--ease-out) both .2s; will-change: transform, opacity; }
@@ -147,7 +162,7 @@ a { color: inherit; text-decoration: none; }
 }
 .brandlogo { display: flex; align-items: center; gap: 9px; padding-inline-start: 6px; }
 .flower { width: 30px; height: 30px; flex: none; }
-.brandname { font-weight: 800; font-size: 16px; font-family: "Amiri", serif; letter-spacing: .2px; }
+.brandname { font-weight: 800; font-size: 16px; font-family: "Tajawal", sans-serif; letter-spacing: .2px; }
 
 .nav-links { display: none; align-items: center; gap: 22px; margin-inline: auto; }
 .nav-links a {
@@ -238,7 +253,7 @@ a { color: inherit; text-decoration: none; }
   animation: popIn .8s var(--ease-out) both .18s;
 }
 .hero-clock .hc-ic { color: var(--orange); flex: none; }
-.hero-clock .hc-time { font-family: "Amiri", serif; font-weight: 800; font-size: 14px; color: var(--ink); letter-spacing: .3px; font-variant-numeric: tabular-nums; }
+.hero-clock .hc-time { font-family: "Tajawal", sans-serif; font-weight: 800; font-size: 14px; color: var(--ink); letter-spacing: .3px; font-variant-numeric: tabular-nums; }
 .hero-clock .hc-sep { width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
 .hero-clock .hc-date { color: var(--ink-2); }
 
@@ -250,7 +265,7 @@ a { color: inherit; text-decoration: none; }
   text-shadow: 0 1px 0 rgba(255,255,255,.45), 0 6px 30px rgba(255,255,255,.35);
 }
 .hl-em {
-  font-family: "Amiri", serif; font-style: italic; font-weight: 700;
+  font-family: "Tajawal", sans-serif; font-style: italic; font-weight: 700;
   color: var(--orange);
 }
 .hl-sub {
@@ -292,7 +307,7 @@ a { color: inherit; text-decoration: none; }
 .dc-key { color: var(--orange); font-weight: 700; font-size: 13px; }
 .dc-sub { color: var(--ink-3); font-weight: 600; font-size: 12.5px; }
 .dc-head { display: flex; align-items: center; gap: 10px; margin-top: 12px; min-height: 30px; }
-.dc-state { font-size: 19px; font-weight: 800; color: var(--ink); font-family: "Amiri", serif; }
+.dc-state { font-size: 19px; font-weight: 800; color: var(--ink); font-family: "Tajawal", sans-serif; }
 
 .pill {
   display: inline-flex; align-items: center; gap: 5px;
@@ -304,7 +319,7 @@ a { color: inherit; text-decoration: none; }
 
 /* News-sentiment badge (next to the score) */
 .np-pill { gap: 6px; padding: 3px 8px; animation: popIn .5s var(--ease-spring) both .9s; }
-.np-pill .np-idx { font-family: "Amiri", serif; font-weight: 800; font-variant-numeric: tabular-nums; }
+.np-pill .np-idx { font-family: "Tajawal", sans-serif; font-weight: 800; font-variant-numeric: tabular-nums; }
 .np-pill .np-c { font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .np-pill .np-up { color: #12885a; }
 .np-pill .np-dn { color: #d1443a; }
@@ -338,7 +353,7 @@ a { color: inherit; text-decoration: none; }
 .sec-head { display: flex; align-items: center; gap: 13px; margin-bottom: 18px; }
 .sec-head .eyebrow { margin-bottom: 0; }
 .sec-num {
-  font-family: "Amiri", serif; font-weight: 800; font-size: 14px; line-height: 1;
+  font-family: "Tajawal", sans-serif; font-weight: 800; font-size: 14px; line-height: 1;
   color: var(--orange-2); background: #fff1ec; border: 1px solid #f8d3c7;
   min-width: 34px; height: 28px; padding: 0 9px;
   display: inline-grid; place-items: center; border-radius: 999px;
@@ -425,7 +440,7 @@ a { color: inherit; text-decoration: none; }
 .tick:hover { transform: translateY(-3px); box-shadow: var(--shadow); border-color: var(--line-2); }
 .tick { min-width: 0; }
 .tick .t-name { font-size: 13px; color: var(--ink-3); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tick .t-price { font-size: 21px; font-weight: 800; margin: 4px 0 2px; font-family: "Amiri", serif; font-variant-numeric: tabular-nums; }
+.tick .t-price { font-size: 21px; font-weight: 800; margin: 4px 0 2px; font-family: "Tajawal", sans-serif; font-variant-numeric: tabular-nums; }
 .tick .t-chg { font-size: 13.5px; font-weight: 800; }
 .up { color: var(--up); } .down { color: var(--down); }
 
@@ -447,7 +462,7 @@ a { color: inherit; text-decoration: none; }
 .sec-bar.up   { background: linear-gradient(90deg,#0f9d63,#12885a); }
 .sec-bar.down { background: linear-gradient(90deg,#e0574c,#d1443a); }
 .sec-pct {
-  font-size: 13px; font-weight: 800; font-family: "Amiri", serif;
+  font-size: 13px; font-weight: 800; font-family: "Tajawal", sans-serif;
   font-variant-numeric: tabular-nums; text-align: left; white-space: nowrap;
 }
 .sec-pct.up { color: var(--up); } .sec-pct.down { color: var(--down); }
@@ -475,7 +490,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: var(--radius-s); padding: 13px 14px; text-align: center;
 }
 .vix-stat .k { font-size: 12px; color: var(--ink-3); font-weight: 700; }
-.vix-stat .v { font-size: 20px; font-weight: 800; margin-top: 3px; font-family: "Amiri", serif; }
+.vix-stat .v { font-size: 20px; font-weight: 800; margin-top: 3px; font-family: "Tajawal", sans-serif; }
 .tv-chart { border-radius: var(--radius-s); border: 1px solid var(--line); overflow: hidden; background: #fff; height: 300px; }
 #vix-spark .spark-line { transition: stroke-dashoffset 1.4s var(--ease); }
 #vix-spark .spark-area { transition: opacity 1.1s ease; }
@@ -484,7 +499,7 @@ a { color: inherit; text-decoration: none; }
 /* ---- Sentiment ---- */
 .senti { grid-template-columns: repeat(3, 1fr); }
 .senti .card { text-align: center; }
-.senti .s-val { font-family: "Amiri", serif; font-size: 42px; font-weight: 700; line-height: 1; }
+.senti .s-val { font-family: "Tajawal", sans-serif; font-size: 42px; font-weight: 700; line-height: 1; }
 .senti .s-lbl { margin-top: 8px; font-weight: 800; font-size: 15px; }
 .senti .s-name { color: var(--ink-3); font-weight: 700; font-size: 13.5px; margin-bottom: 8px; }
 .senti .s-chg { font-size: 12.5px; color: var(--ink-3); margin-top: 6px; font-weight: 700; }
@@ -564,13 +579,16 @@ table.hist .today td { background: #fff6f2; }
 }
 .fab:hover { filter: brightness(1.07); transform: translateY(-3px); }
 .fab svg { display: block; }
-/* Print button is calm/neutral so the orange accent stays for the primary CTA */
-.fab-print {
+/* Print / dark-mode buttons are calm/neutral */
+.fab-print, .fab-dark {
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
   box-shadow: var(--shadow-s);
-  animation: popIn .7s var(--ease-out) both .9s;
 }
-.fab-print:hover { color: var(--orange); border-color: #f8d3c7; }
+.fab-print { animation: popIn .7s var(--ease-out) both .9s; }
+.fab-dark  { animation: popIn .7s var(--ease-out) both 1.02s; }
+.fab-print:hover, .fab-dark:hover { color: var(--orange); border-color: #f8d3c7; }
+/* News-print button keeps the orange accent — primary print action */
+.fab-news { animation: popIn .7s var(--ease-out) both 1.14s; }
 /* Back-to-top hides until you scroll past the hero */
 .totop {
   opacity: 0; transform: translate3d(0,16px,0) scale(.9); pointer-events: none;
@@ -601,7 +619,7 @@ table.hist .today td { background: #fff6f2; }
 @keyframes marquee { from { transform: translate3d(0,0,0); } to { transform: translate3d(-50%,0,0); } }
 .mq-item { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 14px; }
 .mq-name { color: var(--ink-2); }
-.mq-price { font-family: "Amiri", serif; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
+.mq-price { font-family: "Tajawal", sans-serif; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums; }
 .mq-chg { font-weight: 800; font-size: 12.5px; }
 .mq-sep { width: 5px; height: 5px; border-radius: 50%; background: var(--line-2); }
 
@@ -617,10 +635,10 @@ table.hist .today td { background: #fff6f2; }
 .brand .mark {
   width: 46px; height: 46px; border-radius: 13px; background: var(--orange);
   display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 22px;
-  font-family: "Amiri", serif; box-shadow: 0 10px 20px -10px rgba(239,77,35,.6);
+  font-family: "Tajawal", sans-serif; box-shadow: 0 10px 20px -10px rgba(239,77,35,.6);
 }
 .brand .name { display: flex; flex-direction: column; line-height: 1.2; }
-.brand .name b { font-size: 20px; font-family: "Amiri", serif; letter-spacing: .3px; }
+.brand .name b { font-size: 20px; font-family: "Tajawal", sans-serif; letter-spacing: .3px; }
 .brand .name span { font-size: 12.5px; color: var(--ink-3); font-weight: 500; }
 .nav { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .nav a {
@@ -661,11 +679,11 @@ table.hist tbody tr:nth-child(n+6) { animation-delay: .52s; }
 .login-card .mark {
   position: relative;
   width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 18px;
-  background: var(--orange); color: #fff; font-family: "Amiri", serif;
+  background: var(--orange); color: #fff; font-family: "Tajawal", sans-serif;
   font-size: 31px; font-weight: 800; display: grid; place-items: center;
   box-shadow: 0 14px 28px -14px rgba(239,77,35,.75);
 }
-.login-card h1 { font-family: "Amiri", serif; font-size: 27px; position: relative; }
+.login-card h1 { font-family: "Tajawal", sans-serif; font-size: 27px; position: relative; }
 .login-card p { color: var(--ink-3); font-size: 14px; margin: 6px 0 24px; position: relative; }
 .field { text-align: right; margin-bottom: 16px; position: relative; z-index: 1; }
 .field label { font-size: 13px; font-weight: 800; color: var(--ink-2); }
@@ -713,6 +731,64 @@ table.hist tbody tr:nth-child(n+6) { animation-delay: .52s; }
 @media (max-width: 380px) {
   .tickers { grid-template-columns: 1fr 1fr; gap: 10px; }
   .tick { padding: 12px; }
+}
+
+/* ===================================================================== */
+/*  DARK MODE — element-level overrides                                    */
+/* ===================================================================== */
+[data-theme="dark"] .hl-sub { color: var(--ink-2); }
+[data-theme="dark"] .badge  { background: var(--surface); }
+
+[data-theme="dark"] .hero-clock {
+  background: rgba(27,31,44,.72); border-color: rgba(255,255,255,.10);
+}
+[data-theme="dark"] .navpill {
+  background: rgba(27,31,44,.95); border-color: var(--line);
+}
+[data-theme="dark"] .nav-menu { background: var(--surface); border-color: var(--line); }
+[data-theme="dark"] .livepill { background: var(--surface-2); border-color: var(--line); }
+
+[data-theme="dark"] .zubda {
+  background: rgba(239,77,35,.10); border-color: rgba(239,77,35,.25); color: #e8b8ac;
+}
+[data-theme="dark"] .whale {
+  background: rgba(30,60,100,.22); border-color: rgba(80,130,190,.18); color: var(--ink);
+}
+[data-theme="dark"] .news-item:hover { background: rgba(239,77,35,.08); }
+[data-theme="dark"] .news-item:hover .news-title { color: #f07050; }
+[data-theme="dark"] .src {
+  background: rgba(239,77,35,.12); border-color: rgba(239,77,35,.25); color: #f0a090;
+}
+[data-theme="dark"] .tag {
+  background: var(--surface-2); border-color: var(--line); color: var(--ink-3);
+}
+
+[data-theme="dark"] .tv-box { background: var(--surface-2); border-color: var(--line); }
+[data-theme="dark"] .sec-track { background: var(--surface-2); border-color: var(--line); }
+
+[data-theme="dark"] .marquee { background: var(--surface); border-color: var(--line); }
+[data-theme="dark"] .marquee::before {
+  background: linear-gradient(270deg, var(--surface), transparent);
+}
+[data-theme="dark"] .marquee::after {
+  background: linear-gradient(90deg,  var(--surface), transparent);
+}
+
+[data-theme="dark"] .toast { background: var(--surface-2); border: 1px solid var(--line); }
+
+[data-theme="dark"] .gauge svg { color: var(--ink); }
+
+[data-theme="dark"] table.hist th { background: var(--surface); }
+[data-theme="dark"] table.hist tbody tr:hover { background: rgba(239,77,35,.08); }
+[data-theme="dark"] table.hist .today td { background: rgba(239,77,35,.06) !important; }
+
+[data-theme="dark"] .topbar { background: var(--surface); border-color: var(--line); }
+[data-theme="dark"] .nav a  { background: var(--surface-2); border-color: var(--line); }
+[data-theme="dark"] .nav a:hover { background: rgba(239,77,35,.10); border-color: rgba(239,77,35,.3); }
+
+[data-theme="dark"] .login-card { background: var(--surface); border-color: var(--line); }
+[data-theme="dark"] .field input {
+  background: var(--surface-2); border-color: var(--line); color: var(--ink);
 }
 
 /* Freeze one-shot entrances when the tab is hidden (background/headless idle) */
@@ -787,4 +863,12 @@ body.still *::after { animation: none !important; }
 
   a[href]::after { content: ""; } /* no ugly URL expansion */
   .foot { border-top: 1px solid var(--line); margin-top: 12px; }
+
+  /* News-only print (🗞️ button): isolate just the news section, in colour */
+  body.print-news .hero,
+  body.print-news .marquee,
+  body.print-news .section:not(#news) { display: none !important; }
+  body.print-news #news { margin-top: 0 !important; }
+  body.print-news .wrap { padding-top: 8px !important; }
+  body.print-news #news .news-item { break-inside: avoid; page-break-inside: avoid; }
 }

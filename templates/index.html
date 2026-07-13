@@ -6,7 +6,7 @@
   <title>نشرة السوق — Market Brief</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') if not is_static else 'static/style.css' }}">
 </head>
 <body>
@@ -17,11 +17,6 @@
 
   <!-- ================= HERO ================= -->
   <section class="hero">
-    <video class="hero-video" autoplay loop muted playsinline preload="auto"
-           disableremoteplayback webkit-playsinline="true" x5-playsinline="true"
-           poster="https://images.unsplash.com/photo-1557683316-973673baf926?w=1600&q=60">
-      <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260424_064411_9e9d7f84-9277-41f4-ab10-59172d89e6be.mp4" type="video/mp4">
-    </video>
     <div class="hero-overlay"></div>
 
     <div class="hero-fg">
@@ -79,7 +74,8 @@
           {% if not is_static %}
           <a href="/?refresh=1">تحديث الآن</a>
           {% endif %}
-          <a href="#" onclick="window.print();return false;">🖨️ طباعة التقرير</a>
+          <a href="#" id="nav-print-news">🗞️ طباعة الأخبار فقط</a>
+          <a href="#" onclick="window.print();return false;">🖨️ طباعة التقرير الكامل</a>
         </div>
       </div>
 
@@ -200,8 +196,8 @@
         <div class="tv-box tv-strip">
           <div class="tradingview-widget-container">
             <div class="tradingview-widget-container__widget"></div>
-            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
-            {"symbol":"CBOE:VIX","width":"100%","locale":"ar","colorTheme":"light","isTransparent":true}
+            <script type="application/json" class="tv-lazy" data-src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js">
+            {"symbol":"CBOE:VIX","width":"100%","locale":"ar","isTransparent":true}
             </script>
           </div>
         </div>
@@ -210,8 +206,8 @@
           <div class="tv-box">
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-              {"symbol":"CBOE:VIX","dateRange":"1M","width":"100%","height":"100%","locale":"ar","colorTheme":"light","isTransparent":true,"autosize":true,"trendLineColor":"#ef4d23","underLineColor":"rgba(239,77,35,0.12)","underLineBottomColor":"rgba(239,77,35,0)"}
+              <script type="application/json" class="tv-lazy" data-src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js">
+              {"symbol":"CBOE:VIX","dateRange":"1M","width":"100%","height":"100%","locale":"ar","isTransparent":true,"autosize":true,"trendLineColor":"#ef4d23","underLineColor":"rgba(239,77,35,0.12)","underLineBottomColor":"rgba(239,77,35,0)"}
               </script>
             </div>
           </div>
@@ -219,8 +215,8 @@
           <div class="tv-box">
             <div class="tradingview-widget-container">
               <div class="tradingview-widget-container__widget"></div>
-              <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
-              {"symbol":"CBOE:VIX","interval":"1D","width":"100%","height":"100%","isTransparent":true,"showIntervalTabs":true,"displayMode":"single","locale":"ar","colorTheme":"light"}
+              <script type="application/json" class="tv-lazy" data-src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js">
+              {"symbol":"CBOE:VIX","interval":"1D","width":"100%","height":"100%","isTransparent":true,"showIntervalTabs":true,"displayMode":"single","locale":"ar"}
               </script>
             </div>
           </div>
@@ -275,8 +271,14 @@
 </div>
 
 <div class="fabs">
-  <button class="fab fab-print" id="fab-print" aria-label="طباعة التقرير" title="طباعة / حفظ PDF">
+  <button class="fab fab-news" id="fab-news" aria-label="طباعة الأخبار فقط" title="طباعة الأخبار فقط">
+    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V4a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v16a2 2 0 0 1-2 2 2 2 0 0 1-2-2V9a1 1 0 0 1 1-1h2"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+  </button>
+  <button class="fab fab-print" id="fab-print" aria-label="طباعة التقرير" title="طباعة التقرير الكامل / حفظ PDF">
     <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+  </button>
+  <button class="fab fab-dark" id="fab-dark" aria-label="الوضع الليلي" title="الوضع الليلي / النهاري">
+    <svg id="dark-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
   </button>
   <button class="fab totop" id="totop" aria-label="العودة إلى الأعلى" title="أعلى الصفحة">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>

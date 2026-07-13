@@ -4,6 +4,7 @@ Public dashboard — no login. The landing page shows the full live report at a
 glance. A background thread keeps the report warm so page loads are instant,
 and daily records/history are saved to data/history.json.
 """
+import datetime
 import os
 import threading
 import time
@@ -63,12 +64,32 @@ def _refresher():
         time.sleep(REFRESH_SECONDS)
 
 
+def _daily_telegram_sender():
+    """Send the daily market report to Telegram at TELEGRAM_SEND_HOUR (default 9 AM).
+
+    Checks once per minute; sends once per calendar day when the hour matches.
+    Set TELEGRAM_SEND_HOUR=HH (0-23, local server time) to change the send time.
+    """
+    send_hour = int(os.environ.get("TELEGRAM_SEND_HOUR", "9"))
+    last_sent: datetime.date | None = None
+    while True:
+        try:
+            now = datetime.datetime.now()
+            if now.hour == send_hour and now.date() != last_sent:
+                report = brief.build_report()
+                if brief.send_telegram_report(report):
+                    last_sent = now.date()
+        except Exception:  # noqa: BLE001
+            pass
+        time.sleep(60)
+
+
 _refresher_lock = threading.Lock()
 _refresher_started = False
 
 
 def _start_refresher():
-    """Start the background refresher exactly once (idempotent)."""
+    """Start background workers exactly once (idempotent)."""
     global _refresher_started
     with _refresher_lock:
         if _refresher_started:
@@ -76,6 +97,10 @@ def _start_refresher():
         _refresher_started = True
         t = threading.Thread(target=_refresher, name="mb-refresher", daemon=True)
         t.start()
+        if brief.TELEGRAM_TOKEN and brief.TELEGRAM_CHAT_ID:
+            tg = threading.Thread(target=_daily_telegram_sender,
+                                  name="mb-telegram", daemon=True)
+            tg.start()
 
 
 # Start at import time so the refresher also runs under a production WSGI

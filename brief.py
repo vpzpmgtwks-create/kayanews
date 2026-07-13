@@ -22,6 +22,82 @@ import feedparser
 import requests
 
 # --------------------------------------------------------------------------- #
+# Telegram (optional — set env vars to enable daily push)
+# --------------------------------------------------------------------------- #
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
+
+
+def send_telegram_report(report: dict) -> bool:
+    """Send daily market summary to a Telegram channel/chat.
+
+    Reads TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID from environment.
+    Returns True on success, False if disabled or on any error.
+    """
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID:
+        return False
+
+    vix   = report.get("vix") or {}
+    score = report.get("score") or {}
+    fg_s  = report.get("fear_greed_stocks") or {}
+    geo   = report.get("geopolitics") or []
+    mk    = report.get("markets") or []
+
+    def _f(v, d=1):
+        try:
+            return f"{float(v):.{d}f}"
+        except Exception:
+            return "—"
+
+    lines = [
+        "📊 *نشرة السوق اليومية*",
+        "",
+        f"🎯 التقييم: *{_f(score.get('score'))}/١٠* — {score.get('label_ar', '')}",
+        f"😰 VIX: *{_f(vix.get('current'))}* — {vix.get('label_ar', '')}",
+    ]
+    if fg_s.get("ok"):
+        lines.append(
+            f"💹 مزاج الأسهم: *{_f(fg_s.get('value'), 0)}* — {fg_s.get('label_ar', '')}"
+        )
+
+    bl = report.get("bottom_line", "")
+    if bl:
+        lines += ["", f"💡 _{bl}_"]
+
+    pts = report.get("points") or []
+    if pts:
+        lines += ["", "📌 *النقاط الرئيسية:*"]
+        for p in pts[:4]:
+            lines.append(f"◆ {p}")
+
+    top_geo = (geo[0].get("title_ar") or geo[0].get("title")) if geo else None
+    top_mk  = (mk[0].get("title_ar")  or mk[0].get("title"))  if mk  else None
+    if top_geo or top_mk:
+        lines += ["", "📰 *أبرز الأخبار:*"]
+        if top_geo:
+            lines.append(f"🌍 {top_geo}")
+        if top_mk:
+            lines.append(f"📈 {top_mk}")
+
+    lines += ["", "🔗 [التقرير الكامل](https://kayanews.onrender.com)"]
+
+    try:
+        resp = requests.post(
+            f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage",
+            json={
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": "\n".join(lines),
+                "parse_mode": "Markdown",
+                "disable_web_page_preview": False,
+            },
+            timeout=12,
+        )
+        return resp.ok
+    except Exception:  # noqa: BLE001
+        return False
+
+
+# --------------------------------------------------------------------------- #
 # Sources (all free, no API key required)
 # --------------------------------------------------------------------------- #
 NEWS_FEEDS = [
