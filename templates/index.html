@@ -178,8 +178,19 @@
         <div class="whale" id="whale" style="display:none"></div>
         <ul class="points" id="points"></ul>
         <div class="notes-wrap">
-          <div class="notes-lbl">📝 ملاحظاتي اليوم</div>
+          <div class="risk-wrap">
+            <div class="risk-lbl">📊 مستوى خطري اليوم</div>
+            <div class="risk-row">
+              <input type="range" id="risk-slider" class="risk-slider" min="0" max="100" value="50">
+              <span class="risk-val" id="risk-val">متوسط</span>
+            </div>
+          </div>
+          <div class="notes-lbl" style="margin-top:14px">📝 ملاحظاتي اليوم</div>
           <textarea id="notes-ta" class="notes-ta" placeholder="اكتب تحليلك أو ملاحظاتك هنا — تُحفظ تلقائياً..."></textarea>
+          <div class="notes-actions">
+            <button class="notes-action-btn" id="btn-export-notes">📥 تصدير الملاحظات</button>
+            <button class="notes-action-btn" id="btn-clear-read">🧹 مسح المقروءة</button>
+          </div>
         </div>
         <div class="report-share-row" id="report-share-row" style="display:none">
           <button class="share-report-btn" id="btn-copy-report">
@@ -242,10 +253,14 @@
           <button class="news-clear-btn" id="news-clear-btn" style="display:none" aria-label="مسح البحث">✕</button>
         </div>
         <span class="news-filter-info" id="news-filter-info"></span>
-        <span class="news-kbd">اضغط <kbd>/</kbd> للبحث السريع</span>
+        <span class="news-kbd">اضغط <kbd>/</kbd> للبحث · <kbd>?</kbd> للاختصارات</span>
         <button class="news-ctrl-btn" id="btn-news-sort">↕ الترتيب</button>
         <button class="news-ctrl-btn" id="btn-news-compact">📰 مختصر</button>
       </div>
+      <div class="watch-wrap" style="margin-bottom:10px">
+        <input type="text" id="watch-inp" class="watch-inp" placeholder="🔦 كلمات مراقبة: نفط، فيد، بيتكوين — تتلوّن في الأخبار">
+      </div>
+      <div class="src-chips" id="src-chips" style="display:none"></div>
       <div class="grid news-cols">
         <div class="card">
           <h2>🌍 السياسة والجيوسياسة</h2>
@@ -298,6 +313,22 @@
   <button class="fab totop" id="totop" aria-label="العودة إلى الأعلى" title="أعلى الصفحة">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
   </button>
+</div>
+
+<div class="shortcuts-overlay" id="shortcuts-overlay">
+  <div class="shortcuts-panel">
+    <h3>⌨️ اختصارات لوحة المفاتيح</h3>
+    <div class="sc-grid">
+      <span class="sc-key">?</span><span class="sc-desc">عرض / إخفاء هذه اللوحة</span>
+      <span class="sc-key">r</span><span class="sc-desc">تحديث البيانات الآن</span>
+      <span class="sc-key">/</span><span class="sc-desc">البحث في الأخبار</span>
+      <span class="sc-key">f</span><span class="sc-desc">وضع التركيز (زبدة فقط)</span>
+      <span class="sc-key">1</span><span class="sc-desc">الانتقال للزبدة</span>
+      <span class="sc-key">6</span><span class="sc-desc">الانتقال للأخبار</span>
+      <span class="sc-key">Esc</span><span class="sc-desc">إغلاق / إلغاء</span>
+    </div>
+    <div class="sc-close"><button id="sc-close-btn">إغلاق</button></div>
+  </div>
 </div>
 
 <div class="status-bar" id="status-bar">
