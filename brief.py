@@ -124,16 +124,26 @@ def get_telegram_log() -> list[dict]:
 # Sources (all free, no API key required)
 # --------------------------------------------------------------------------- #
 NEWS_FEEDS = [
-    ("Al Jazeera", "https://www.aljazeera.com/xml/rss/all.xml", "geopolitics"),
-    ("BBC World", "https://feeds.bbci.co.uk/news/world/rss.xml", "geopolitics"),
-    # Analyst/macro blogs from the user's source list (free RSS, no key)
-    ("ZeroHedge", "https://feeds.feedburner.com/zerohedge/feed", "geopolitics"),
-    ("BBC Business", "https://feeds.bbci.co.uk/news/business/rss.xml", "markets"),
-    ("CNBC Markets", "https://www.cnbc.com/id/100003114/device/rss/rss.html", "markets"),
-    ("CNBC Economy", "https://www.cnbc.com/id/20910258/device/rss/rss.html", "markets"),
-    ("MarketWatch", "https://feeds.content.dowjones.io/public/rss/mw_topstories", "markets"),
-    ("Yahoo Finance", "https://finance.yahoo.com/news/rssindex", "markets"),
-    ("Lyn Alden", "https://www.lynalden.com/feed/", "markets"),
+    # Wire services — publish within seconds of breaking events
+    ("Reuters World",    "https://feeds.reuters.com/Reuters/worldNews",                "geopolitics"),
+    ("Reuters Politics", "https://feeds.reuters.com/Reuters/PoliticsNews",             "geopolitics"),
+    ("Reuters Business", "https://feeds.reuters.com/reuters/businessNews",             "markets"),
+    ("Reuters Finance",  "https://feeds.reuters.com/reuters/financialsNews",           "markets"),
+    # Broad news
+    ("Al Jazeera",       "https://www.aljazeera.com/xml/rss/all.xml",                  "geopolitics"),
+    ("BBC World",        "https://feeds.bbci.co.uk/news/world/rss.xml",                "geopolitics"),
+    # Specialized financial / macro
+    ("ForexLive",        "https://www.forexlive.com/feed/news",                        "markets"),
+    ("CNBC Markets",     "https://www.cnbc.com/id/100003114/device/rss/rss.html",      "markets"),
+    ("CNBC Economy",     "https://www.cnbc.com/id/20910258/device/rss/rss.html",       "markets"),
+    ("MarketWatch",      "https://feeds.content.dowjones.io/public/rss/mw_topstories", "markets"),
+    # Crypto — specialized
+    ("CoinDesk",         "https://www.coindesk.com/arc/outboundfeeds/rss/",            "markets"),
+    ("CoinTelegraph",    "https://cointelegraph.com/rss",                              "markets"),
+    # Energy / Commodities
+    ("OilPrice",         "https://oilprice.com/rss/main",                              "markets"),
+    # Broad financial coverage
+    ("Investing.com",    "https://www.investing.com/rss/news.rss",                     "markets"),
 ]
 
 VIX_URL = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1mo"
@@ -193,6 +203,9 @@ FIN_KEYWORDS = [
     "earnings", "stocks", "bond", "yield", "dollar", "treasury", "market",
     "nasdaq", "s&p", "dow", "ecb", "boj", "tariff", "crude", "gold",
     "bitcoin", "crypto", "central bank", "selloff", "rally", "wall street",
+    "ethereum", "btc", "eth", "defi", "blockchain", "altcoin", "stablecoin",
+    "binance", "coinbase", "sec", "etf", "halving", "forex", "fx",
+    "oil", "opec", "commodities", "silver", "copper", "energy",
 ]
 NEG_KEYWORDS = [
     "war", "invasion", "attack", "strike", "missile", "sanction", "crash",
@@ -209,7 +222,9 @@ POS_KEYWORDS = [
 
 # in-memory caches
 _CACHE: dict = {"ts": 0, "data": None}
-_CACHE_TTL = 90  # seconds — page/API auto-refresh every minute
+_CACHE_TTL = 60  # seconds — background refresher fires every 45 s
+_NEWS_CACHE: dict = {"ts": 0, "data": None}
+_NEWS_CACHE_TTL = 30  # news refreshed independently every 30 s
 _TR_CACHE: dict = {}  # english title -> arabic (per-process)
 
 # Persistent daily history (site records)
@@ -467,14 +482,18 @@ def _parse_feed(url: str):
     bytes to feedparser. feedparser's own fetch has no timeout and can hang the
     whole request if a single RSS host stalls, so we never let it fetch."""
     try:
-        r = requests.get(url, headers=BROWSER_HEADERS, timeout=(5, 12))
+        r = requests.get(url, headers=BROWSER_HEADERS, timeout=(4, 8))
         r.raise_for_status()
         return feedparser.parse(r.content)
     except Exception:  # noqa: BLE001
         return None
 
 
-def fetch_news() -> list[dict]:
+def fetch_news(force: bool = False) -> list[dict]:
+    now = time.time()
+    if not force and _NEWS_CACHE["data"] is not None and (now - _NEWS_CACHE["ts"]) < _NEWS_CACHE_TTL:
+        return _NEWS_CACHE["data"]
+
     items: list[dict] = []
     seen_titles: set[str] = set()
 
@@ -486,7 +505,7 @@ def fetch_news() -> list[dict]:
         if feed is None:
             continue
 
-        for entry in feed.entries[:25]:
+        for entry in feed.entries[:30]:
             title = _clean(entry.get("title", ""))
             if not title or title.lower() in seen_titles:
                 continue
@@ -522,7 +541,28 @@ def fetch_news() -> list[dict]:
             })
 
     items.sort(key=lambda x: (x["relevance"], x["published"] or 0), reverse=True)
+    _NEWS_CACHE["ts"] = time.time()
+    _NEWS_CACHE["data"] = items
     return items
+
+
+def get_news() -> dict:
+    """Return geo/markets news with 30-second freshness for /api/news."""
+    news = fetch_news()
+    geo = [n for n in news if n["category"] == "geopolitics"][:10]
+    mk = [n for n in news if n["category"] == "markets"][:10]
+    titles = [n["title"] for n in geo] + [n["title"] for n in mk]
+    tr = _translate_batch(titles)
+    for i, n in enumerate(geo):
+        n["title_ar"] = tr[i]
+    for j, n in enumerate(mk):
+        n["title_ar"] = tr[len(geo) + j]
+    return {
+        "geopolitics": geo,
+        "markets": mk,
+        "news_count": len(news),
+        "news_sentiment": news_sentiment_index(news),
+    }
 
 
 def _parse_time(entry) -> float | None:
@@ -781,7 +821,7 @@ def build_report(force: bool = False) -> dict:
         f_vix = ex.submit(fetch_vix)
         f_quotes = ex.submit(fetch_markets)
         f_sectors = ex.submit(fetch_sectors)
-        f_news = ex.submit(fetch_news)
+        f_news = ex.submit(fetch_news, force)
         f_fgc = ex.submit(fetch_fear_greed_crypto)
         f_fgs = ex.submit(fetch_fear_greed_stocks)
         f_stable = ex.submit(fetch_stablecoins)

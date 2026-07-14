@@ -1901,6 +1901,30 @@
     }
   }
 
+  // ---- fast news poller (every 30 s, independent of full report refresh) ----
+  function setupNewsPoller() {
+    var NEWS_MS = 30000;
+    function pollNews() {
+      fetch('/api/news', { headers: { Accept: 'application/json' } })
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          if (!data || (!data.geopolitics && !data.markets)) return;
+          origNewsHtml = {};
+          renderNews(data);
+          updateNewsCounts();
+          patchNewsSortTime();
+          applyBreakingBadge();
+          applyBlacklist();
+          applyTimeFilter();
+          applyTagFilter();
+          applyPins();
+        })
+        .catch(function() {});
+      setTimeout(pollNews, NEWS_MS);
+    }
+    setTimeout(pollNews, NEWS_MS);
+  }
+
   // ---- boot -------------------------------------------------------------
   document.addEventListener("DOMContentLoaded", function () {
     syncStill();
@@ -1950,6 +1974,7 @@
     setupTts();
     setupCountdownTimer();
     setupFloatingNote();
+    setupNewsPoller();
     buildWeeklySummary();
     startClock();
     var seed = window.MB_REPORT;

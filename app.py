@@ -18,7 +18,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET", "mb-secret-2024-change-me")
 ADMIN_PIN = os.environ.get("ADMIN_PIN", "")
 
-REFRESH_SECONDS = int(os.environ.get("MB_REFRESH_SECONDS", "60"))
+REFRESH_SECONDS = int(os.environ.get("MB_REFRESH_SECONDS", "45"))
 
 # Production hardening: set MB_ENV=production on the host to trust the
 # platform's X-Forwarded-* proxy headers (correct scheme/host in redirects).
@@ -42,6 +42,12 @@ def index():
 def api_report():
     report = brief.build_report(force=request.args.get("refresh") == "1")
     return jsonify(report)
+
+
+@app.route("/api/news")
+def api_news():
+    """Fast news-only endpoint — 30 s cache, independent of the full report."""
+    return jsonify(brief.get_news())
 
 
 @app.route("/history")
