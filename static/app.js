@@ -380,10 +380,14 @@
     var isNew = !readNews.has(url) && !_seenUrls.has(url) ? " is-new" : "";
     _seenUrls.add(url);
     var tsMs = n.published_str ? (function() { try { return new Date(n.published_str.replace(" UTC","Z").replace(" ","T")).getTime(); } catch(e) { return 0; } })() : 0;
+    var relPct = Math.min(100, Math.round((n.relevance || 0) / 12 * 100));
+    var relCls = relPct >= 70 ? 'rel-high' : relPct >= 35 ? 'rel-mid' : 'rel-low';
+    var relBadge = '<span class="rel-badge ' + relCls + '" title="نسبة أهمية الخبر للأسواق">' + relPct + '%</span>';
     return '<a class="news-item' + read + sc2 + isNew + '" href="' + esc(url) + '" target="_blank" rel="noopener"' +
       ' data-sent="' + (n.sentiment || 0) + '" data-url="' + esc(url) + '" data-ts="' + tsMs + '">' +
       '<div class="news-title">' + esc(title) + '</div>' +
       '<div class="news-meta">' +
+      relBadge +
       '<span class="dot-s" style="background:' + sc + '"></span>' +
       '<span class="src">' + esc(n.source) + '</span>' +
       (n.published_str ? '<span>' + esc(n.published_str) + '</span>' : '') + tags +
