@@ -47,7 +47,7 @@
             <a href="#markets">المؤشرات</a>
             <a href="#news">الأخبار</a>
             <a href="/history">السجل</a>
-            <a href="/fiqh">📖 فقه الكريبتو</a>
+            <a href="/fiqh">فقه الكريبتو</a>
             <a href="/telegram">تيليجرام</a>
             <a href="https://t.me/+qBtY37bvQow2NWZk" target="_blank" rel="noopener" class="tg-join-btn">✈ انضم للقناة</a>
           </div>
@@ -75,21 +75,21 @@
           <a href="#markets">المؤشرات</a>
           <a href="#news">الأخبار</a>
           <a href="/history">السجل اليومي</a>
-          <a href="/fiqh">📖 فقه الكريبتو</a>
-          <a href="/telegram">📱 تيليجرام</a>
+          <a href="/fiqh">فقه الكريبتو</a>
+          <a href="/telegram">تيليجرام</a>
           <a href="https://t.me/+qBtY37bvQow2NWZk" target="_blank" rel="noopener" class="tg-join-btn" style="margin:4px 0">✈ انضم للقناة</a>
           {% if not is_static %}
           <a href="/?refresh=1">تحديث الآن</a>
           {% endif %}
-          <a href="#" id="nav-print-news">🗞️ طباعة الأخبار فقط</a>
-          <a href="#" onclick="window.print();return false;">🖨️ طباعة التقرير الكامل</a>
+          <a href="#" id="nav-print-news">طباعة الأخبار فقط</a>
+          <a href="#" onclick="window.print();return false;">طباعة التقرير الكامل</a>
         </div>
       </div>
 
       <!-- Hero content -->
       <div class="hero-content">
         <span class="badge"><span class="badge-dot"></span> نشرة السوق · تحديث لحظي</span>
-        <div class="market-timer" id="market-timer">⏳ جاري...</div>
+        <div class="market-timer" id="market-timer">جاري...</div>
         <div class="world-clocks">
           <div class="wclock"><span class="wclock-city">دبي</span><span class="wclock-time" id="wc-dubai">--:--</span></div>
           <div class="wclock"><span class="wclock-city">الرياض</span><span class="wclock-time" id="wc-riyadh">--:--</span></div>
@@ -186,7 +186,7 @@
         <ul class="points" id="points"></ul>
         <div class="notes-wrap">
           <div class="risk-wrap">
-            <div class="risk-lbl">📊 مستوى خطري اليوم</div>
+            <div class="risk-lbl">مستوى خطري اليوم</div>
             <div class="risk-row">
               <input type="range" id="risk-slider" class="risk-slider" min="0" max="100" value="50">
               <span class="risk-val" id="risk-val">متوسط</span>
@@ -194,7 +194,7 @@
           </div>
           <!-- Composite risk meter -->
           <div class="risk-composite-wrap">
-            <div class="risk-composite-label">🎯 مقياس الخطر المركّب · VIX + التقييم + المشاعر</div>
+            <div class="risk-composite-label">مقياس الخطر المركّب · VIX + التقييم + المشاعر</div>
             <div class="risk-composite-track">
               <div class="risk-composite-fill" id="composite-fill" style="width:50%;background:#F0BE46"></div>
             </div>
@@ -204,17 +204,17 @@
               <span>مرتفع</span>
             </div>
           </div>
-          <div class="notes-lbl" style="margin-top:14px">📝 ملاحظاتي اليوم</div>
+          <div class="notes-lbl" style="margin-top:14px">ملاحظاتي اليوم</div>
           <textarea id="notes-ta" class="notes-ta" placeholder="اكتب تحليلك أو ملاحظاتك هنا — تُحفظ تلقائياً..."></textarea>
           <div class="notes-actions">
-            <button class="notes-action-btn" id="btn-export-notes">📥 تصدير الملاحظات</button>
-            <button class="notes-action-btn" id="btn-export-full">📋 النشرة + الملاحظات</button>
-            <button class="notes-action-btn" id="btn-clear-read">🧹 مسح المقروءة</button>
-            <button class="notes-action-btn" id="btn-export-read-hist">📊 تصدير المقروءة CSV</button>
+            <button class="notes-action-btn" id="btn-export-notes">تصدير الملاحظات</button>
+            <button class="notes-action-btn" id="btn-export-full">النشرة + الملاحظات</button>
+            <button class="notes-action-btn" id="btn-clear-read">مسح المقروءة</button>
+            <button class="notes-action-btn" id="btn-export-read-hist">تصدير المقروءة CSV</button>
           </div>
           <!-- Macro Dashboard -->
           <div class="macro-card">
-            <div class="macro-card-title">💹 لوحة الماكرو السريعة</div>
+            <div class="macro-card-title">لوحة الماكرو السريعة</div>
             <div class="macro-grid">
               <div class="macro-item"><div class="macro-item-sym">BTC</div><div class="macro-item-val" id="macro-val-btc">—</div><div class="macro-item-chg" id="macro-chg-btc">—</div></div>
               <div class="macro-item"><div class="macro-item-sym">ETH</div><div class="macro-item-val" id="macro-val-eth">—</div><div class="macro-item-chg" id="macro-chg-eth">—</div></div>
@@ -227,7 +227,7 @@
 
           <!-- Portfolio calculator -->
           <div class="portfolio-wrap">
-            <div class="portfolio-title">💰 حاسبة محفظتي</div>
+            <div class="portfolio-title">حاسبة محفظتي</div>
             <div class="portfolio-rows">
               <div class="portfolio-row">
                 <span class="portfolio-symbol">BTC</span>
@@ -256,7 +256,7 @@
             </div>
             <!-- BTC price alert -->
             <div class="btc-alert-wrap">
-              <span class="btc-alert-label">🚨 تنبيه BTC</span>
+              <span class="btc-alert-label">تنبيه BTC</span>
               <input type="number" id="btc-alert-inp" class="btc-alert-inp" placeholder="السعر" min="1" step="100">
               <select id="btc-alert-sel" class="btc-alert-sel">
                 <option value="above">يتجاوز ▲</option>
@@ -269,7 +269,7 @@
         </div>
         <!-- Weekly summary from localStorage -->
         <div class="weekly-summary" id="weekly-summary" style="display:none">
-          <div class="weekly-summary-title">📊 ملخص آخر 7 أيام من سجلك الشخصي</div>
+          <div class="weekly-summary-title">ملخص آخر 7 أيام من سجلك الشخصي</div>
           <div class="weekly-summary-grid">
             <div class="ws-card"><div class="ws-card-val" id="ws-avg">—</div><div class="ws-card-lbl">متوسط التقييم</div></div>
             <div class="ws-card"><div class="ws-card-val" id="ws-best">—</div><div class="ws-card-lbl">أفضل يوم</div></div>
@@ -307,7 +307,7 @@
       <div class="sec-head"><span class="sec-num">٠٣</span><div class="eyebrow">أداء القطاعات · دوران رأس المال</div></div>
       <div class="panel">
         <div class="sectors" id="sectors"></div>
-        <div class="sec-cap">🔄 أداء قطاعات S&amp;P 500 اليوم — من الأقوى للأضعف (صناديق SPDR)</div>
+        <div class="sec-cap">أداء قطاعات S&amp;P 500 اليوم — من الأقوى للأضعف (صناديق SPDR)</div>
       </div>
     </section>
 
@@ -321,7 +321,7 @@
           <div class="vix-stat"><div class="k">أدنى (شهر)</div><div class="v" id="vix-low">—</div></div>
         </div>
         <div class="vix-alert-wrap">
-          <span style="font-size:11px;color:var(--ink-3);font-weight:700">🔔 تنبيه VIX</span>
+          <span style="font-size:11px;color:var(--ink-3);font-weight:700">تنبيه VIX</span>
           <input type="number" id="vix-alert-inp" class="vix-alert-inp" placeholder="مثال: 30" min="1" max="100" step="0.5">
           <button class="vix-alert-btn" id="vix-alert-set">تفعيل</button>
           <span class="vix-alert-status" id="vix-alert-status"></span>
@@ -330,7 +330,7 @@
           <svg id="vix-spark" viewBox="0 0 640 260" preserveAspectRatio="none"
                style="width:100%;height:100%" role="img" aria-label="VIX 1-month chart"></svg>
         </div>
-        <div class="tv-cap">📈 مسار مؤشر VIX خلال آخر شهر</div>
+        <div class="tv-cap">مسار مؤشر VIX خلال آخر شهر</div>
       </div>
     </section>
 
@@ -345,11 +345,11 @@
       <div class="sec-head"><span class="sec-num">٠٦</span><div class="eyebrow">الأخبار · <span id="news-count">—</span> خبر مُرشّح</div><span class="news-read-counter" id="news-read-counter">قرأت <b>0</b>/0</span></div>
       <div class="tag-filter" id="tag-filter" style="display:none"></div>
       <div class="time-filter" id="time-filter">
-        <button class="tf-chip active" data-tf="0">📅 كل الأخبار</button>
-        <button class="tf-chip" data-tf="1">⏱ آخر ساعة</button>
-        <button class="tf-chip" data-tf="6">🕕 آخر 6 ساعات</button>
-        <button class="tf-chip" data-tf="24">📆 آخر 24 ساعة</button>
-        <button class="news-ctrl-btn" id="btn-group-src" style="margin-right:auto">📰 بالمصدر</button>
+        <button class="tf-chip active" data-tf="0">كل الأخبار</button>
+        <button class="tf-chip" data-tf="1">آخر ساعة</button>
+        <button class="tf-chip" data-tf="6">آخر 6 ساعات</button>
+        <button class="tf-chip" data-tf="24">آخر 24 ساعة</button>
+        <button class="news-ctrl-btn" id="btn-group-src" style="margin-right:auto">بالمصدر</button>
       </div>
       <div class="news-filter-row">
         <div class="news-search-wrap">
@@ -360,21 +360,21 @@
         <span class="news-filter-info" id="news-filter-info"></span>
         <span class="news-kbd">اضغط <kbd>/</kbd> للبحث · <kbd>?</kbd> للاختصارات</span>
         <button class="news-ctrl-btn" id="btn-news-sort">↕ الترتيب</button>
-        <button class="news-ctrl-btn" id="btn-news-compact">📰 مختصر</button>
+        <button class="news-ctrl-btn" id="btn-news-compact">مختصر</button>
       </div>
       <div class="watch-wrap" style="margin-bottom:6px">
-        <input type="text" id="watch-inp" class="watch-inp" placeholder="🔦 كلمات مراقبة: نفط، فيد، بيتكوين — تتلوّن في الأخبار">
+        <input type="text" id="watch-inp" class="watch-inp" placeholder="كلمات مراقبة: نفط، فيد، بيتكوين — تتلوّن في الأخبار">
       </div>
       <div class="blacklist-wrap">
-        <input type="text" id="blacklist-inp" class="blacklist-inp" placeholder="🚫 كلمات استبعاد: كلمات تُخفي الأخبار التي تحتويها (مفصولة بفاصلة)">
+        <input type="text" id="blacklist-inp" class="blacklist-inp" placeholder="كلمات استبعاد: كلمات تُخفي الأخبار التي تحتويها (مفصولة بفاصلة)">
       </div>
       <div class="src-chips" id="src-chips" style="display:none;margin-top:8px"></div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">
         <div class="sent-filter" id="sent-filter" style="margin-top:0;flex:1;min-width:0">
           <button class="sent-chip active" data-sent-f="all">الكل</button>
-          <button class="sent-chip pos" data-sent-f="pos">📈 إيجابي</button>
-          <button class="sent-chip neg" data-sent-f="neg">📉 سلبي</button>
-          <button class="sent-chip" data-sent-f="neu">➡️ محايد</button>
+          <button class="sent-chip pos" data-sent-f="pos">إيجابي</button>
+          <button class="sent-chip neg" data-sent-f="neg">سلبي</button>
+          <button class="sent-chip" data-sent-f="neu">محايد</button>
           <button class="news-ctrl-btn" id="btn-copy-all-news" style="margin-right:auto">⧉ نسخ الكل</button>
         </div>
         <div class="sent-donut-wrap" style="flex-shrink:0">
@@ -388,11 +388,11 @@
       </div>
       <div class="grid news-cols">
         <div class="card">
-          <h2>🌍 السياسة والجيوسياسة <span class="news-count-badge" id="geo-count-badge"></span></h2>
+          <h2>السياسة والجيوسياسة <span class="news-count-badge" id="geo-count-badge"></span></h2>
           <div class="news-list mt" id="geo-list"></div>
         </div>
         <div class="card">
-          <h2>📊 الاقتصاد والأسواق <span class="news-count-badge" id="mk-count-badge"></span></h2>
+          <h2>الاقتصاد والأسواق <span class="news-count-badge" id="mk-count-badge"></span></h2>
           <div class="news-list mt" id="mk-list"></div>
         </div>
       </div>
@@ -401,7 +401,7 @@
     <!-- ── فقه الكريبتو PROMO ── -->
     <section class="section reveal">
       <a href="/fiqh" class="fiqh-promo">
-        <div class="fp-icon">📚</div>
+        <div class="fp-icon"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
         <div class="fp-body">
           <div class="fp-eyebrow">جديد · سلسلة يومية</div>
           <div class="fp-title">فقه العملات الرقمية</div>
@@ -419,22 +419,22 @@
       <b>نشرة السوق</b>
       <span class="visit-streak" id="visit-streak"></span>
       <div class="settings-backup-row" style="margin-top:10px">
-        <button class="sb-btn" id="btn-settings-export">📦 تصدير الإعدادات</button>
-        <button class="sb-btn" id="btn-settings-import">📥 استيراد الإعدادات</button>
+        <button class="sb-btn" id="btn-settings-export">تصدير الإعدادات</button>
+        <button class="sb-btn" id="btn-settings-import">استيراد الإعدادات</button>
         <input type="file" id="settings-import-file" accept=".json" style="display:none">
       </div>
       <div class="snapshot-row">
-        <button class="snapshot-btn" id="btn-save-snapshot">📸 حفظ لقطة اليوم</button>
-        <button class="snapshot-btn" id="btn-view-snapshots">📂 عرض اللقطات</button>
+        <button class="snapshot-btn" id="btn-save-snapshot">حفظ لقطة اليوم</button>
+        <button class="snapshot-btn" id="btn-view-snapshots">عرض اللقطات</button>
         <span class="snapshot-count" id="snapshot-count"></span>
       </div>
       <div class="auto-dark-row" style="margin-top:8px">
-        <span class="auto-dark-lbl">🌙 وضع ليلي تلقائي بعد</span>
+        <span class="auto-dark-lbl">وضع ليلي تلقائي بعد</span>
         <input type="time" id="auto-dark-inp" class="auto-dark-inp" value="20:00">
       </div>
       <!-- Countdown timer -->
       <div class="countdown-wrap">
-        <span class="countdown-label">⏲️ مؤقت القراءة</span>
+        <span class="countdown-label">مؤقت القراءة</span>
         <input type="number" id="cd-inp" class="countdown-inp" value="5" min="1" max="120">
         <span style="font-size:11px;color:var(--ink-3)">دقيقة</span>
         <span class="countdown-display" id="cd-display">05:00</span>
@@ -442,7 +442,7 @@
       </div>
       <!-- Read-later button -->
       <div class="snapshot-row" style="margin-top:8px">
-        <button class="snapshot-btn" id="btn-open-readlater">🔖 قائمة اقرأ لاحقاً <span id="rl-count" style="color:var(--orange)"></span></button>
+        <button class="snapshot-btn" id="btn-open-readlater">قائمة اقرأ لاحقاً <span id="rl-count" style="color:var(--orange)"></span></button>
       </div>
       <div class="session-timer" style="margin-top:8px">
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
@@ -477,16 +477,16 @@
 <!-- Read Later overlay -->
 <div class="readlater-overlay" id="readlater-overlay">
   <div class="readlater-panel">
-    <h3>🔖 اقرأ لاحقاً <span class="readlater-count"></span></h3>
+    <h3>اقرأ لاحقاً <span class="readlater-count"></span></h3>
     <div id="rl-list"></div>
     <button class="rl-close" id="rl-close-btn">إغلاق</button>
   </div>
 </div>
 
 <!-- Floating sticky note -->
-<div class="floatnote-fab" id="floatnote-fab" title="ملاحظة سريعة">📌</div>
+<div class="floatnote-fab" id="floatnote-fab" title="ملاحظة سريعة"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
 <div class="floatnote-panel" id="floatnote-panel">
-  <div class="floatnote-header">📌 ملاحظة طافية — مرئية دائماً</div>
+  <div class="floatnote-header">ملاحظة طافية — مرئية دائماً</div>
   <textarea class="floatnote-ta" id="floatnote-ta" placeholder="اكتب ملاحظة سريعة..."></textarea>
   <div class="floatnote-save" id="floatnote-saved"></div>
 </div>
@@ -494,7 +494,7 @@
 <!-- Snapshot overlay -->
 <div class="snapshot-overlay" id="snapshot-overlay">
   <div class="snapshot-panel">
-    <h3>📂 اللقطات اليومية المحفوظة</h3>
+    <h3>اللقطات اليومية المحفوظة</h3>
     <div id="snapshot-list"></div>
     <p class="snapshot-restore-note">تُحفظ تلقائياً عند الضغط على "حفظ لقطة اليوم"</p>
     <button class="snapshot-close" id="snapshot-close">إغلاق</button>
@@ -503,7 +503,7 @@
 
 <div class="shortcuts-overlay" id="shortcuts-overlay">
   <div class="shortcuts-panel">
-    <h3>⌨️ اختصارات لوحة المفاتيح</h3>
+    <h3>⌨ اختصارات لوحة المفاتيح</h3>
     <div class="sc-grid">
       <span class="sc-key">?</span><span class="sc-desc">عرض / إخفاء هذه اللوحة</span>
       <span class="sc-key">r</span><span class="sc-desc">تحديث البيانات الآن</span>

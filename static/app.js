@@ -267,6 +267,7 @@
   }
 
   // ---- report renderers -------------------------------------------------
+  var _prevPrices = {};
   function renderTickers(quotes) {
     var el = $("tickers");
     if (!el) return;
@@ -274,7 +275,10 @@
       if (!q.ok) return '<div class="tick"><div class="t-name">' + esc(q.name) +
         '</div><div class="t-price">—</div></div>';
       var cls = q.up ? "up" : "down", ar = q.up ? "▲" : "▼";
-      return '<div class="tick"><div class="t-name">' + esc(q.name) + '</div>' +
+      var prev = _prevPrices[q.name];
+      var flash = prev != null && prev !== q.price ? (q.price > prev ? " flash-up" : " flash-down") : "";
+      _prevPrices[q.name] = q.price;
+      return '<div class="tick' + flash + '"><div class="t-name">' + esc(q.name) + '</div>' +
         '<div class="t-price">' + num(q.price, q.price >= 1000 ? 0 : 2) + '</div>' +
         '<div class="t-chg ' + cls + '">' + ar + " " + signed(q.change_pct, 2) + '%</div></div>';
     }).join("");
@@ -369,6 +373,20 @@
     }
   }
 
+  // Thin-line SVG icons for the per-item action row (no emoji — cleaner look)
+  var _NI = function (paths) {
+    return '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + '</svg>';
+  };
+  var NI_ICONS = {
+    pin:      _NI('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>'),
+    copy:     _NI('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
+    chat:     _NI('<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>'),
+    send:     _NI('<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>'),
+    bookmark: _NI('<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>'),
+    sound:    _NI('<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>'),
+    x:        _NI('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'),
+  };
+
   function newsItem(n) {
     var title = n.title_ar || n.title || "";
     var url   = n.link || "";
@@ -392,13 +410,13 @@
       '<span class="src">' + esc(n.source) + '</span>' +
       (n.published_str ? '<span>' + esc(n.published_str) + '</span>' : '') + tags +
       '<span class="ni-actions">' +
-      '<button class="ni-pin' + (pinnedUrls.has(url) ? ' pinned' : '') + '" data-pin-url="' + esc(url) + '" title="تثبيت">⭐</button>' +
-      '<button class="ni-copy" data-copy-title="' + esc(title) + '" data-copy-url="' + esc(url) + '" title="نسخ العنوان">⧉</button>' +
-      '<button class="ni-wa"   data-wa-title="'   + esc(title) + '" data-wa-url="'   + esc(url) + '" title="مشاركة واتساب">💬</button>' +
-      '<button class="ni-tg"   data-tg-title="'   + esc(title) + '" data-tg-url="'   + esc(url) + '" title="مشاركة تليجرام">✈</button>' +
-      '<button class="ni-rl"   data-rl-url="'    + esc(url)   + '" data-rl-title="'  + esc(title) + '" title="احفظ لاحقاً">🔖</button>' +
-      '<button class="ni-tts" data-tts-text="'  + esc(title) + '" title="قراءة بالصوت">🔊</button>' +
-      '<button class="ni-hide" title="إخفاء">✕</button>' +
+      '<button class="ni-pin' + (pinnedUrls.has(url) ? ' pinned' : '') + '" data-pin-url="' + esc(url) + '" title="تثبيت">' + NI_ICONS.pin + '</button>' +
+      '<button class="ni-copy" data-copy-title="' + esc(title) + '" data-copy-url="' + esc(url) + '" title="نسخ العنوان">' + NI_ICONS.copy + '</button>' +
+      '<button class="ni-wa"   data-wa-title="'   + esc(title) + '" data-wa-url="'   + esc(url) + '" title="مشاركة واتساب">' + NI_ICONS.chat + '</button>' +
+      '<button class="ni-tg"   data-tg-title="'   + esc(title) + '" data-tg-url="'   + esc(url) + '" title="مشاركة تليجرام">' + NI_ICONS.send + '</button>' +
+      '<button class="ni-rl"   data-rl-url="'    + esc(url)   + '" data-rl-title="'  + esc(title) + '" title="احفظ لاحقاً">' + NI_ICONS.bookmark + '</button>' +
+      '<button class="ni-tts" data-tts-text="'  + esc(title) + '" title="قراءة بالصوت">' + NI_ICONS.sound + '</button>' +
+      '<button class="ni-hide" title="إخفاء">' + NI_ICONS.x + '</button>' +
       '</span></div></a>';
   }
 
@@ -462,9 +480,9 @@
         navigator.clipboard.writeText(text).then(function () {
           var orig = copyBtn.innerHTML;
           copyBtn.classList.add("copied");
-          copyBtn.textContent = "✅ تم النسخ!";
+          copyBtn.textContent = "تم النسخ!";
           setTimeout(function () { copyBtn.classList.remove("copied"); copyBtn.innerHTML = orig; }, 2200);
-          toast("✅ تم نسخ التقرير — الصقه في واتساب أو تيليجرام");
+          toast("تم نسخ التقرير — الصقه في واتساب أو تيليجرام");
         }).catch(function () {});
       });
     }
@@ -536,7 +554,7 @@
       if (cp) {
         e.preventDefault(); e.stopPropagation();
         navigator.clipboard.writeText(cp.dataset.copyTitle + "\n" + cp.dataset.copyUrl)
-          .then(function () { toast("✅ تم نسخ الخبر"); }).catch(function () {});
+          .then(function () { toast("تم نسخ الخبر"); }).catch(function () {});
         return;
       }
       var pin = e.target.closest(".ni-pin");
@@ -547,7 +565,7 @@
         savePin(url, on);
         pin.classList.toggle("pinned", on);
         applyPins();
-        toast(on ? "⭐ تم التثبيت" : "📌 تم إلغاء التثبيت");
+        toast(on ? "⭐ تم التثبيت" : "تم إلغاء التثبيت");
         return;
       }
       var item = e.target.closest(".news-item");
@@ -608,7 +626,7 @@
     btn.addEventListener("click", function () {
       on = !on;
       document.body.classList.toggle("news-compact", on);
-      btn.textContent = on ? "📄 مفصّل" : "📰 مختصر";
+      btn.textContent = on ? "مفصّل" : "مختصر";
       btn.classList.toggle("active", on);
     });
   }
@@ -642,14 +660,14 @@
       var total = h * 60 + m, open = 570, close = 960; // 9:30 & 16:00
       if (total >= open && total < close) {
         var rem = close - total;
-        el.textContent = "NYSE 🟢 مفتوح · يُغلق خلال " + Math.floor(rem / 60) + "س " + (rem % 60) + "د";
+        el.textContent = "NYSE مفتوح · يُغلق خلال " + Math.floor(rem / 60) + "س " + (rem % 60) + "د";
         el.className = "market-timer open";
       } else if (total < open) {
         var to = open - total;
-        el.textContent = "NYSE 🔴 مغلق · يُفتح خلال " + Math.floor(to / 60) + "س " + (to % 60) + "د";
+        el.textContent = "NYSE مغلق · يُفتح خلال " + Math.floor(to / 60) + "س " + (to % 60) + "د";
         el.className = "market-timer closed";
       } else {
-        el.textContent = "NYSE 🔴 مغلق · يُفتح غداً 9:30ص"; el.className = "market-timer closed";
+        el.textContent = "NYSE مغلق · يُفتح غداً 9:30ص"; el.className = "market-timer closed";
       }
     }
     update(); setInterval(update, 30000);
@@ -685,7 +703,7 @@
       d.last   = today;
       try { localStorage.setItem(key, JSON.stringify(d)); } catch (e) {}
     }
-    var fire = d.streak > 1 ? '<span class="streak-fire">🔥</span> ' + d.streak + " أيام متتالية · " : "";
+    var fire = d.streak > 1 ? d.streak + " أيام متتالية · " : "";
     el.innerHTML = fire + "زيارة #" + d.count;
   }
 
@@ -745,7 +763,7 @@
       var bar = el.querySelector(".news-pinned-bar");
       if (pinned.length) {
         if (!bar) { bar = document.createElement("div"); bar.className = "news-pinned-bar"; el.insertBefore(bar, el.firstChild); }
-        bar.innerHTML = '<div class="pinned-label">📌 مثبّت</div>';
+        bar.innerHTML = '<div class="pinned-label">مثبّت</div>';
         pinned.forEach(function (it) { bar.appendChild(it); });
       } else if (bar) { bar.remove(); }
       rest.forEach(function (it) { el.appendChild(it); });
@@ -764,7 +782,7 @@
       if (tag === "INPUT" || tag === "TEXTAREA") return;
       if (e.key === "?") { e.preventDefault(); open(); return; }
       if (e.key === "Escape") { close(); return; }
-      if (e.key === "r" || e.key === "R") { e.preventDefault(); poll(); toast("🔄 جاري التحديث..."); return; }
+      if (e.key === "r" || e.key === "R") { e.preventDefault(); poll(); toast("جاري التحديث..."); return; }
       if (e.key === "f" || e.key === "F") { e.preventDefault(); var btn = $("btn-focus"); if (btn) btn.click(); return; }
       var sectionMap = {"1":"markets","2":"full","3":"full","4":"full","5":"senti","6":"news"};
       if (sectionMap[e.key]) {
@@ -840,7 +858,7 @@
   function setupRiskSlider() {
     var sl = $("risk-slider"), val = $("risk-val"); if (!sl) return;
     var key = "mb-risk-v1";
-    var label = function (v) { return v < 25 ? "منخفض جداً 🟢" : v < 45 ? "منخفض 🟡" : v < 55 ? "متوسط 🟠" : v < 75 ? "عالٍ 🔴" : "عالٍ جداً ⚠️"; };
+    var label = function (v) { return v < 25 ? "منخفض جداً" : v < 45 ? "منخفض" : v < 55 ? "متوسط" : v < 75 ? "عالٍ" : "عالٍ جداً"; };
     try { sl.value = localStorage.getItem(key) || 50; } catch (e) {}
     function update() { if (val) val.textContent = label(sl.value); try { localStorage.setItem(key, sl.value); } catch (e) {} }
     update(); sl.addEventListener("input", update);
@@ -856,13 +874,13 @@
       a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
       a.download = "ملاحظاتي_" + new Date().toISOString().split("T")[0] + ".txt";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      toast("📥 تم تصدير الملاحظات");
+      toast("تم تصدير الملاحظات");
     });
     var clrBtn = $("btn-clear-read");
     if (clrBtn) clrBtn.addEventListener("click", function () {
       readNews.clear(); try { localStorage.removeItem(READ_NEWS_KEY); } catch (e) {}
       document.querySelectorAll(".news-item.news-read").forEach(function (el) { el.classList.remove("news-read"); });
-      toast("🧹 تم مسح الأخبار المقروءة");
+      toast("تم مسح الأخبار المقروءة");
     });
   }
 
@@ -873,8 +891,7 @@
     var sc = r.score.score;
     if (_lastScore !== null && Math.abs(sc - _lastScore) >= 0.5) {
       var dir = sc > _lastScore ? "↑ ارتفع" : "↓ انخفض";
-      var em  = sc >= 7 ? "🟢" : sc >= 5 ? "🟡" : sc >= 3 ? "🟠" : "🔴";
-      toast(em + " التقييم " + dir + " من " + _lastScore + " إلى " + sc + "/10");
+      toast("التقييم " + dir + " من " + _lastScore + " إلى " + sc + "/10");
     }
     _lastScore = sc;
   }
@@ -938,7 +955,7 @@
       if (!btn) return;
       e.preventDefault(); e.stopPropagation();
       var item = btn.closest(".news-item");
-      if (item) { item.classList.add("ni-hidden"); updateReadCounter(); toast("🙈 تم إخفاء الخبر"); }
+      if (item) { item.classList.add("ni-hidden"); updateReadCounter(); toast("تم إخفاء الخبر"); }
     });
   }
 
@@ -946,7 +963,7 @@
   // Patches into setupNewsSort to add a "recent" option
   function patchNewsSortTime() {
     var btn = $("btn-news-sort"); if (!btn) return;
-    var modes = ["↕ الترتيب", "↑ إيجابي", "↓ سلبي", "🕐 الأحدث"];
+    var modes = ["↕ الترتيب", "↑ إيجابي", "↓ سلبي", "الأحدث"];
     var idx = 0;
     btn.addEventListener("click", function () {}, true); // no-op — overridden below
     btn.onclick = function () {
@@ -982,7 +999,7 @@
       a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
       a.download = "نشرة_السوق_" + new Date().toISOString().split("T")[0] + ".txt";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      toast("📥 تم تصدير النشرة + الملاحظات");
+      toast("تم تصدير النشرة + الملاحظات");
     });
   }
 
@@ -1049,7 +1066,7 @@
       var text = "📰 أخبار اليوم — نشرة السوق:\n\n" + lines.join("\n\n") +
         "\n\n📢 https://t.me/+qBtY37bvQow2NWZk";
       navigator.clipboard.writeText(text).then(function () {
-        toast("✅ تم نسخ " + items.length + " خبر");
+        toast("تم نسخ " + items.length + " خبر");
       }).catch(function () { toast("تعذّر النسخ"); });
     });
   }
@@ -1075,9 +1092,9 @@
           try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (e) {}
           updateBtn();
           if (on) {
-            new Notification("نشرة السوق 📊", { body: "تم تفعيل التذكير اليومي بالنشرة", icon: "" });
-            toast("🔔 تم تفعيل التذكير اليومي");
-          } else { toast("🔕 تم إيقاف التذكير"); }
+            new Notification("نشرة السوق", { body: "تم تفعيل التذكير اليومي بالنشرة", icon: "" });
+            toast("تم تفعيل التذكير اليومي");
+          } else { toast("تم إيقاف التذكير"); }
         } else { toast("لم يُمنح إذن الإشعارات"); }
       });
     });
@@ -1316,12 +1333,12 @@
       e.preventDefault(); e.stopPropagation();
       var added = toggleReadLater(btn.dataset.rlUrl, btn.dataset.rlTitle);
       applyReadLaterBadges();
-      toast(added ? "🔖 حُفظ في قائمة القراءة" : "🗑️ حُذف من قائمة القراءة");
+      toast(added ? "حُفظ في قائمة القراءة" : "حُذف من قائمة القراءة");
     });
     var openBtn = $("btn-open-readlater"), overlay = $("readlater-overlay"), closeBtn = $("rl-close-btn");
     function openOverlay() {
       var items = getRlItems(); var list = $("rl-list"); if (!list) return;
-      if (!items.length) { list.innerHTML = '<p class="rl-empty">لا توجد مقالات محفوظة بعد — اضغط 🔖 على أي خبر.</p>'; }
+      if (!items.length) { list.innerHTML = '<p class="rl-empty">لا توجد مقالات محفوظة بعد — اضغط زر الحفظ على أي خبر.</p>'; }
       else {
         list.innerHTML = items.map(function(it, idx) {
           return '<div class="rl-item"><div class="rl-item-title"><a href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a><br><span style="font-size:10px;color:var(--ink-3)">' + (it.saved||"") + '</span></div><button class="rl-item-del" data-rl-idx="' + idx + '" title="حذف">✕</button></div>';
@@ -1445,7 +1462,7 @@
       if (_cdRemaining <= 0) {
         clearInterval(_cdInterval); _cdInterval = null;
         btn.textContent = "ابدأ"; btn.classList.remove("running");
-        toast("⏰ انتهى المؤقت!"); beep();
+        toast("انتهى المؤقت!"); beep();
       }
     }
     function beep() {
@@ -1471,7 +1488,7 @@
       if (disp) disp.textContent = (m<10?"0"+m:m)+":"+(s<10?"0"+s:s);
       _cdInterval = setInterval(tick, 1000);
       btn.textContent = "إيقاف"; btn.classList.add("running");
-      toast("⏲️ بدأ المؤقت — " + mins + " دقيقة");
+      toast("بدأ المؤقت — " + mins + " دقيقة");
     });
   }
 
@@ -1530,12 +1547,12 @@
     try { var sv = JSON.parse(localStorage.getItem(BTC_ALERT_KEY) || "null"); if (sv) { _btcAlertVal = sv.val; _btcAlertDir = sv.dir || "above"; inp.value = sv.val; if (sel) sel.value = sv.dir || "above"; } } catch(e) {}
     function updateStatus() {
       if (!status) return;
-      status.textContent = _btcAlertVal != null ? ("🔔 BTC " + (_btcAlertDir === "above" ? ">" : "<") + " $" + num(_btcAlertVal, 0)) : "";
+      status.textContent = _btcAlertVal != null ? ("BTC " + (_btcAlertDir === "above" ? ">" : "<") + " $" + num(_btcAlertVal, 0)) : "";
     }
     if (btn) btn.addEventListener("click", function() {
       var v = parseFloat(inp.value); var d = sel ? sel.value : "above";
-      if (isNaN(v) || v <= 0) { _btcAlertVal = null; try { localStorage.removeItem(BTC_ALERT_KEY); } catch(e) {} toast("🔕 تم إلغاء تنبيه BTC"); }
-      else { _btcAlertVal = v; _btcAlertDir = d; try { localStorage.setItem(BTC_ALERT_KEY, JSON.stringify({val:v,dir:d})); } catch(e) {} toast("🔔 سيتم تنبيهك عندما BTC " + (d==="above"?"يتجاوز":"ينخفض دون") + " $" + num(v,0)); }
+      if (isNaN(v) || v <= 0) { _btcAlertVal = null; try { localStorage.removeItem(BTC_ALERT_KEY); } catch(e) {} toast("تم إلغاء تنبيه BTC"); }
+      else { _btcAlertVal = v; _btcAlertDir = d; try { localStorage.setItem(BTC_ALERT_KEY, JSON.stringify({val:v,dir:d})); } catch(e) {} toast("سيتم تنبيهك عندما BTC " + (d==="above"?"يتجاوز":"ينخفض دون") + " $" + num(v,0)); }
       updateStatus();
     });
     updateStatus();
@@ -1547,7 +1564,7 @@
     for (var i = 0; i < r.quotes.length; i++) { var q = r.quotes[i]; if (q && q.symbol && q.symbol.toUpperCase().replace("-USD","") === "BTC" && q.price) { btcQ = parseFloat(q.price); break; } }
     if (btcQ == null) return;
     var triggered = _btcAlertDir === "above" ? btcQ > _btcAlertVal : btcQ < _btcAlertVal;
-    if (triggered && !_btcAlertFired) { _btcAlertFired = true; toast("🚨 BTC وصل إلى $" + num(btcQ, 0) + " — " + (_btcAlertDir === "above" ? "تجاوز" : "انخفض دون") + " $" + num(_btcAlertVal, 0)); }
+    if (triggered && !_btcAlertFired) { _btcAlertFired = true; toast("BTC وصل إلى $" + num(btcQ, 0) + " — " + (_btcAlertDir === "above" ? "تجاوز" : "انخفض دون") + " $" + num(_btcAlertVal, 0)); }
     if (!triggered) _btcAlertFired = false;
   }
 
@@ -1587,7 +1604,7 @@
     fill.style.width = composite + "%";
     fill.style.background = color;
     if (score) { score.textContent = composite + "%"; score.style.color = color; }
-    if (lbl) lbl.textContent = composite >= 70 ? "مرتفع ⚠️" : composite >= 40 ? "متوسط" : "منخفض ✓";
+    if (lbl) lbl.textContent = composite >= 70 ? "مرتفع" : composite >= 40 ? "متوسط" : "منخفض ✓";
   }
 
   // ---- Auto dark mode by time ---------------------------------------------
@@ -1623,7 +1640,7 @@
     while (snaps.length > 30) snaps.pop();
     try { localStorage.setItem(SNAP_KEY, JSON.stringify(snaps)); } catch(e) {}
     updateSnapshotCount();
-    toast("📸 تم حفظ لقطة اليوم (" + today + ")");
+    toast("تم حفظ لقطة اليوم (" + today + ")");
   }
   function updateSnapshotCount() {
     var el = $("snapshot-count"); if (!el) return;
@@ -1642,7 +1659,7 @@
         list.innerHTML = snaps.map(function(s) {
           var sc = s.score != null ? s.score + "/10" : "—";
           var color = s.score >= 7 ? "#22C97A" : s.score >= 4 ? "#F0BE46" : "#E05050";
-          return '<div class="snapshot-item"><span class="snapshot-item-date">📅 ' + s.date + '</span><span class="snapshot-item-score" style="color:' + color + '">' + sc + '</span></div>';
+          return '<div class="snapshot-item"><span class="snapshot-item-date">' + s.date + '</span><span class="snapshot-item-score" style="color:' + color + '">' + sc + '</span></div>';
         }).join("");
       }
       if (overlay) overlay.classList.add("open");
@@ -1672,7 +1689,7 @@
     btn.addEventListener("click", function() {
       _groupedBySource = !_groupedBySource;
       btn.classList.toggle("active", _groupedBySource);
-      btn.textContent = _groupedBySource ? "📰 بالمصدر ✓" : "📰 بالمصدر";
+      btn.textContent = _groupedBySource ? "بالمصدر ✓" : "بالمصدر";
       ["geo-list","mk-list"].forEach(function(id) {
         var el = $(id); if (!el) return;
         var items = Array.from(el.querySelectorAll("a.news-item[data-url]"));
@@ -1686,7 +1703,7 @@
         });
         Object.keys(groups).sort().forEach(function(src) {
           var hdr = document.createElement("div"); hdr.className = "src-group-hdr";
-          hdr.innerHTML = '<span>📰 ' + esc(src) + '</span><span style="font-size:10px">' + groups[src].length + ' خبر</span>';
+          hdr.innerHTML = '<span>' + esc(src) + '</span><span style="font-size:10px">' + groups[src].length + ' خبر</span>';
           el.appendChild(hdr);
           groups[src].forEach(function(item) { el.appendChild(item); });
         });
@@ -1717,20 +1734,20 @@
     try { var saved = localStorage.getItem(VIX_ALERT_KEY); if (saved) { _vixAlertThreshold = parseFloat(saved); inp.value = saved; } } catch(e) {}
     function updateStatus() {
       if (!status) return;
-      if (_vixAlertThreshold != null) { status.textContent = "🔔 تنبيه عند VIX > " + _vixAlertThreshold; if (btn) btn.classList.add("active"); }
+      if (_vixAlertThreshold != null) { status.textContent = "تنبيه عند VIX > " + _vixAlertThreshold; if (btn) btn.classList.add("active"); }
       else { status.textContent = ""; if (btn) btn.classList.remove("active"); }
     }
     if (btn) btn.addEventListener("click", function() {
       var v = parseFloat(inp.value);
-      if (isNaN(v) || v <= 0) { _vixAlertThreshold = null; try { localStorage.removeItem(VIX_ALERT_KEY); } catch(e) {} toast("🔕 تم إلغاء تنبيه VIX"); }
-      else { _vixAlertThreshold = v; try { localStorage.setItem(VIX_ALERT_KEY, v); } catch(e) {} toast("🔔 سيتم تنبيهك عندما يتجاوز VIX " + v); }
+      if (isNaN(v) || v <= 0) { _vixAlertThreshold = null; try { localStorage.removeItem(VIX_ALERT_KEY); } catch(e) {} toast("تم إلغاء تنبيه VIX"); }
+      else { _vixAlertThreshold = v; try { localStorage.setItem(VIX_ALERT_KEY, v); } catch(e) {} toast("سيتم تنبيهك عندما يتجاوز VIX " + v); }
       updateStatus();
     });
     updateStatus();
   }
   function checkVixAlert(r) {
     if (_vixAlertThreshold == null || !r || !r.vix || r.vix.current == null) return;
-    if (r.vix.current > _vixAlertThreshold) toast("⚠️ تنبيه: VIX وصل إلى " + num(r.vix.current, 1) + " — تجاوز حدك " + _vixAlertThreshold);
+    if (r.vix.current > _vixAlertThreshold) toast("تنبيه: VIX وصل إلى " + num(r.vix.current, 1) + " — تجاوز حدك " + _vixAlertThreshold);
   }
 
   // ---- 3. Portfolio calculator --------------------------------------------
@@ -1791,7 +1808,7 @@
       a.href = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
       a.download = "market-brief-backup-" + new Date().toISOString().split("T")[0] + ".json";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      toast("📦 تم تصدير " + Object.keys(data).length + " إعداد");
+      toast("تم تصدير " + Object.keys(data).length + " إعداد");
     });
     if (impBtn && impFile) {
       impBtn.addEventListener("click", function() { impFile.click(); });
@@ -1802,7 +1819,7 @@
           try {
             var data = JSON.parse(e.target.result); var count = 0;
             Object.keys(data).forEach(function(k) { if (k.startsWith("mb-")) { localStorage.setItem(k, data[k]); count++; } });
-            toast("✅ تم استيراد " + count + " إعداد — أعِد تحميل الصفحة");
+            toast("تم استيراد " + count + " إعداد — أعِد تحميل الصفحة");
           } catch(err) { toast("❌ ملف غير صالح"); }
         };
         reader.readAsText(file);
@@ -1869,7 +1886,7 @@
       a.href = "data:text/csv;charset=utf-8," + encodeURIComponent("url\n" + urls.join("\n"));
       a.download = "الأخبار_المقروءة_" + new Date().toISOString().split("T")[0] + ".csv";
       document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      toast("📊 تم تصدير " + urls.length + " خبر مقروء");
+      toast("تم تصدير " + urls.length + " خبر مقروء");
     });
   }
 

@@ -1692,3 +1692,142 @@ body.still *::after { animation: none !important; }
   body.print-news .wrap { padding-top: 8px !important; }
   body.print-news #news .news-item { break-inside: avoid; page-break-inside: avoid; }
 }
+
+/* ===================================================================== */
+/*  POLISH LAYER — motion, texture & refined micro-interactions           */
+/* ===================================================================== */
+
+/* Orange selection + thin obsidian scrollbar */
+::selection { background: rgba(240,120,24,.32); color: #fff; }
+[data-theme="light"] ::selection { background: rgba(240,120,24,.25); color: #14161d; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #0a0a0a; }
+::-webkit-scrollbar-thumb {
+  background: #242424; border-radius: 99px; border: 2px solid #0a0a0a;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--orange-2); }
+[data-theme="light"] ::-webkit-scrollbar-track { background: #eceae5; }
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: #cfccc4; border-color: #eceae5; }
+[data-theme="light"] ::-webkit-scrollbar-thumb:hover { background: var(--orange); }
+html { scrollbar-color: #242424 #0a0a0a; scrollbar-width: thin; }
+[data-theme="light"] html { scrollbar-color: #cfccc4 #eceae5; }
+
+/* Keyboard focus — visible, on-brand */
+:focus-visible {
+  outline: 2px solid rgba(240,120,24,.65);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Press feedback on every button */
+button { touch-action: manipulation; }
+button:active { transform: scale(.96); }
+
+/* ── Card hover: soft amber bloom + hairline light on top edge ── */
+.card, .panel { position: relative; }
+.card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; opacity: 0;
+  box-shadow: 0 24px 70px -30px rgba(240,120,24,.28), inset 0 1px 0 rgba(240,120,24,.14);
+  transition: opacity .35s var(--ease);
+}
+.card:hover::after { opacity: 1; }
+[data-theme="light"] .card::after {
+  box-shadow: 0 20px 55px -28px rgba(240,120,24,.35), inset 0 1px 0 rgba(255,255,255,.9);
+}
+
+/* ── News rows: amber edge-bar slides in from the right (RTL) ── */
+.news-item { position: relative; }
+.news-item::before {
+  content: ""; position: absolute; top: 12px; bottom: 12px; right: 0;
+  width: 3px; border-radius: 3px; background: var(--orange);
+  transform: scaleY(0); opacity: 0;
+  transition: transform .3s var(--ease-out), opacity .25s;
+}
+.news-item:hover::before { transform: scaleY(1); opacity: 1; }
+
+/* ── Unified action icons (SVG) ── */
+.ni-actions button {
+  display: inline-grid; place-items: center;
+  width: 26px; height: 26px; padding: 0;
+  border-radius: 8px; border: none; background: none;
+  color: var(--ink-3); cursor: pointer;
+  transition: background .18s var(--ease), color .18s var(--ease), transform .18s var(--ease);
+}
+.ni-actions button:hover { background: var(--surface-2); transform: translateY(-1px); }
+.ni-actions svg { display: block; }
+.ni-pin.pinned svg { fill: currentColor; }
+.ni-rl.saved svg  { fill: currentColor; }
+.ni-actions .ni-pin:hover  { color: #F0BE46; background: rgba(240,190,70,.12); }
+.ni-actions .ni-copy:hover { color: var(--orange); }
+.ni-actions .ni-wa:hover   { color: #22c55e; background: rgba(37,211,102,.1); }
+.ni-actions .ni-tg:hover   { color: #26a5e4; background: rgba(38,165,228,.1); }
+.ni-actions .ni-rl:hover   { color: var(--orange); background: rgba(240,120,24,.1); }
+.ni-actions .ni-tts:hover  { color: var(--up); background: rgba(34,201,122,.1); }
+.ni-actions .ni-hide:hover { color: var(--down); background: rgba(224,80,80,.1); }
+
+/* ── Hero CTA: light sweep across on hover ── */
+.hero-cta, .cta-mini { position: relative; overflow: hidden; }
+.hero-cta::before, .cta-mini::before {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 46%;
+  right: -60%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,.34), transparent);
+  transform: skewX(-18deg);
+  transition: right .55s var(--ease);
+  pointer-events: none;
+}
+.hero-cta:hover::before, .cta-mini:hover::before { right: 120%; }
+
+/* ── Live price flash on refresh ── */
+@keyframes flashUp {
+  0% { background: rgba(34,201,122,.16); border-color: rgba(34,201,122,.4); }
+  100% { background: var(--surface); border-color: var(--line); }
+}
+@keyframes flashDown {
+  0% { background: rgba(224,80,80,.14); border-color: rgba(224,80,80,.4); }
+  100% { background: var(--surface); border-color: var(--line); }
+}
+.tick.flash-up   { animation: flashUp 1.6s var(--ease-out) both; }
+.tick.flash-down { animation: flashDown 1.6s var(--ease-out) both; }
+
+/* ── Section eyebrow line grows in when revealed ── */
+.eyebrow::before { transform-origin: right center; }
+.reveal .eyebrow::before { transform: scaleX(0); }
+.reveal.in .eyebrow::before {
+  transform: scaleX(1);
+  transition: transform .7s var(--ease-out) .15s;
+}
+
+/* ── Gauge + spark polish ── */
+.gauge svg text { transition: fill .4s; }
+
+/* ── Numbers settle without jumping ── */
+.t-price, .s-val, .vix-stat .v, .sec-pct { font-variant-numeric: tabular-nums; }
+
+/* ── Smooth theme switch ── */
+body, .card, .panel, .tick, .navpill, .tray, .dcard, .news-item {
+  transition-property: background-color, border-color, color, transform, box-shadow, opacity;
+  transition-duration: .3s;
+  transition-timing-function: var(--ease);
+}
+
+/* ── Subtle grain so flat blacks don't band ── */
+.hero::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit;
+  opacity: .5; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .04 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+[data-theme="light"] .hero::before { opacity: .25; }
+
+/* ── Marquee pauses on hover ── */
+.mq-track:hover { animation-play-state: paused; }
+
+/* ── Respect reduced-motion everywhere ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  html { scroll-behavior: auto; }
+}

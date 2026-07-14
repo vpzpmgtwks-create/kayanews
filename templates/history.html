@@ -30,7 +30,7 @@
 
   <div class="hist-chart-section">
     <div class="hist-chart-header">
-      <span class="hist-chart-title">📈 مسار التقييم اليومي — {{ rows|length }} يوم</span>
+      <span class="hist-chart-title">مسار التقييم اليومي — {{ rows|length }} يوم</span>
       <button class="hist-export-btn" id="hist-export-btn">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         تصدير CSV
@@ -41,11 +41,11 @@
   {% endif %}
 
   <section class="card mt">
-    <div class="eyebrow">📑 سجلّ التقارير · {{ rows|length }} يوم محفوظ</div>
+    <div class="eyebrow">سجلّ التقارير · {{ rows|length }} يوم محفوظ</div>
     {% if rows %}
     <!-- Heatmap calendar -->
     <div class="heatmap-wrap">
-      <div class="heatmap-title">🗓️ خريطة التقييمات — آخر 91 يوم · <span id="heatmap-range"></span></div>
+      <div class="heatmap-title">خريطة التقييمات — آخر 91 يوم · <span id="heatmap-range"></span></div>
       <div class="heatmap-grid" id="heatmap-grid"></div>
       <div class="hm-legend">
         <span class="hm-swatch" style="background:rgba(34,201,122,.65)"></span>ممتاز (7+)
@@ -61,9 +61,9 @@
     <div class="hist-score-filter" id="hist-month-filter" style="margin-bottom:10px"></div>
     <div class="hist-score-filter" id="hist-score-filter">
       <button class="hsf-chip active" data-range="all">الكل</button>
-      <button class="hsf-chip" data-range="good">🟢 ممتاز (7+)</button>
-      <button class="hsf-chip" data-range="mid">🟡 متوسط (4–7)</button>
-      <button class="hsf-chip" data-range="bad">🔴 ضعيف (أقل من 4)</button>
+      <button class="hsf-chip" data-range="good">ممتاز (7+)</button>
+      <button class="hsf-chip" data-range="mid">متوسط (4–7)</button>
+      <button class="hsf-chip" data-range="bad">ضعيف (أقل من 4)</button>
     </div>
     <div class="hist-search-wrap">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -132,14 +132,14 @@
     var bestRow  = ROWS.find(function (r) { return r.score === best; });
     var worstRow = ROWS.find(function (r) { return r.score === worst; });
     var trend = scores.length >= 2 ? scores[0] - scores[scores.length - 1] : 0;
-    var trendLabel = trend > 0.3 ? "📈 صاعد" : trend < -0.3 ? "📉 هابط" : "➡️ مستقر";
+    var trendLabel = trend > 0.3 ? "صاعد" : trend < -0.3 ? "هابط" : "مستقر";
     function card(label, val, sub) {
       return '<div class="hist-stat-card"><div class="hsc-label">' + label + '</div><div class="hsc-val">' + val + '</div><div class="hsc-sub">' + (sub || "") + '</div></div>';
     }
     el.innerHTML =
       card("متوسط التقييم", avg + "/10", ROWS.length + " يوم") +
-      card("أفضل يوم 🟢", best + "/10", bestRow ? bestRow.date : "") +
-      card("أسوأ يوم 🔴", worst + "/10", worstRow ? worstRow.date : "") +
+      card("أفضل يوم", best + "/10", bestRow ? bestRow.date : "") +
+      card("أسوأ يوم", worst + "/10", worstRow ? worstRow.date : "") +
       card("الاتجاه الحالي", trendLabel, "مقارنة بأول تسجيل");
   })();
 
@@ -206,7 +206,7 @@
     var key = "mb-streak-v1", today = new Date().toISOString().split("T")[0], d;
     try { d = JSON.parse(localStorage.getItem(key)); } catch (e) {}
     if (d && d.count) {
-      var fire = d.streak > 1 ? '<span class="streak-fire">🔥</span> ' + d.streak + " أيام متتالية · " : "";
+      var fire = d.streak > 1 ? '<span class="streak-fire"></span> ' + d.streak + " أيام متتالية · " : "";
       el.innerHTML = fire + "زيارة #" + d.count;
     }
   })();
