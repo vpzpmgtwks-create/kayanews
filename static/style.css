@@ -1831,3 +1831,89 @@ body, .card, .panel, .tick, .navpill, .tray, .dcard, .news-item {
   }
   html { scroll-behavior: auto; }
 }
+
+/* ===================================================================== */
+/*  SIGNATURE MOTION — unmistakable, smooth, alive                        */
+/* ===================================================================== */
+
+/* ── Drifting amber aurora inside the hero ── */
+@keyframes orbDrift1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(-14%, 10%) scale(1.15); }
+  66%  { transform: translate(10%, -6%) scale(.92); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+@keyframes orbDrift2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(16%, -12%) scale(1.2); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+.hero-orb {
+  position: absolute; border-radius: 50%; pointer-events: none; z-index: 0;
+  filter: blur(70px); will-change: transform;
+}
+.hero-orb.o1 {
+  width: 46vw; height: 46vw; max-width: 640px; max-height: 640px;
+  top: -12%; left: 58%;
+  background: radial-gradient(circle, rgba(240,120,24,.22) 0%, transparent 65%);
+  animation: orbDrift1 26s ease-in-out infinite;
+}
+.hero-orb.o2 {
+  width: 34vw; height: 34vw; max-width: 460px; max-height: 460px;
+  bottom: -8%; right: 66%;
+  background: radial-gradient(circle, rgba(255,149,48,.13) 0%, transparent 65%);
+  animation: orbDrift2 34s ease-in-out infinite;
+}
+[data-theme="light"] .hero-orb.o1 { background: radial-gradient(circle, rgba(240,120,24,.18) 0%, transparent 65%); }
+[data-theme="light"] .hero-orb.o2 { background: radial-gradient(circle, rgba(255,149,48,.12) 0%, transparent 65%); }
+
+/* ── Headline accent: living amber gradient ── */
+@keyframes emShine {
+  0%   { background-position: 130% center; }
+  100% { background-position: -30% center; }
+}
+.hl-em {
+  background: linear-gradient(100deg,
+    var(--orange-2) 20%, var(--orange-3) 38%, #FFC46B 50%, var(--orange-3) 62%, var(--orange-2) 80%);
+  background-size: 220% auto;
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  animation: emShine 5.5s var(--ease) infinite;
+}
+
+/* ── Reading progress — thin amber line pinned to the very top ── */
+.scroll-progress {
+  position: fixed; top: 0; right: 0; height: 3px; width: 0;
+  background: linear-gradient(90deg, var(--orange-3), var(--orange));
+  z-index: 1000; border-radius: 0 0 0 3px;
+  box-shadow: 0 0 12px rgba(240,120,24,.55);
+  transition: width .12s linear;
+  pointer-events: none;
+}
+
+/* ── Tray: breathing amber halo ── */
+@keyframes trayBreathe {
+  0%, 100% { box-shadow: 0 30px 70px -40px rgba(0,0,0,.9), 0 0 0 1px rgba(240,120,24,.10), 0 0 42px -18px rgba(240,120,24,.18); }
+  50%      { box-shadow: 0 30px 70px -40px rgba(0,0,0,.9), 0 0 0 1px rgba(240,120,24,.22), 0 0 60px -14px rgba(240,120,24,.34); }
+}
+.tray { animation: trayBreathe 6s ease-in-out infinite; border-color: transparent; }
+
+/* ── Live pill dot: radar ping ── */
+@keyframes ping {
+  0%   { box-shadow: 0 0 0 0 rgba(34,201,122,.45); }
+  70%  { box-shadow: 0 0 0 7px rgba(34,201,122,0); }
+  100% { box-shadow: 0 0 0 0 rgba(34,201,122,0); }
+}
+.livepill .dot { animation: ping 2.2s var(--ease) infinite; }
+.badge-dot { animation: ping 2.6s var(--ease) infinite; box-shadow: 0 0 0 0 rgba(240,120,24,.4); }
+@keyframes pingOrange {
+  0%   { box-shadow: 0 0 0 0 rgba(240,120,24,.45); }
+  70%  { box-shadow: 0 0 0 7px rgba(240,120,24,0); }
+  100% { box-shadow: 0 0 0 0 rgba(240,120,24,0); }
+}
+.badge-dot { animation: pingOrange 2.6s var(--ease) infinite; }
+
+/* Reduced motion: kill the signature layer too */
+@media (prefers-reduced-motion: reduce) {
+  .hero-orb, .hl-em, .tray, .livepill .dot, .badge-dot { animation: none !important; }
+}

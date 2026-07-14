@@ -28,6 +28,18 @@ if IS_PROD:
     app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 
 
+# Cache-busting: append ?v=<mtime> to every static URL so browsers pick up
+# new CSS/JS immediately after each deploy (no hard refresh needed).
+@app.url_defaults
+def _static_cache_bust(endpoint, values):
+    if endpoint == "static" and "filename" in values:
+        path = os.path.join(app.static_folder or "static", values["filename"])
+        try:
+            values["v"] = int(os.stat(path).st_mtime)
+        except OSError:
+            pass
+
+
 # --------------------------------------------------------------------------- #
 # Pages  (public — no auth)
 # --------------------------------------------------------------------------- #

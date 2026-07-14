@@ -1922,6 +1922,21 @@
     }
   }
 
+  // ---- reading progress bar (amber line at the very top) -----------------
+  function setupScrollProgress() {
+    var bar = $("scroll-progress"); if (!bar) return;
+    var ticking = false;
+    function paint() {
+      var h = document.documentElement.scrollHeight - window.innerHeight;
+      bar.style.width = (h > 0 ? (window.pageYOffset / h) * 100 : 0) + "%";
+      ticking = false;
+    }
+    window.addEventListener("scroll", function () {
+      if (!ticking) { ticking = true; requestAnimationFrame(paint); }
+    }, { passive: true });
+    paint();
+  }
+
   // ---- fast news poller (every 30 s, independent of full report refresh) ----
   function setupNewsPoller() {
     var NEWS_MS = 30000;
@@ -1996,6 +2011,7 @@
     setupCountdownTimer();
     setupFloatingNote();
     setupNewsPoller();
+    setupScrollProgress();
     buildWeeklySummary();
     startClock();
     var seed = window.MB_REPORT;
