@@ -400,7 +400,7 @@
     if (m) m.innerHTML = (r.markets || []).map(newsItem).join("") || emptyRow();
     setText("news-count", r.news_count != null ? r.news_count : "—");
     if (newsSearchTerm) setTimeout(filterNews, 60);
-    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); updateNewsCounts(); applyBreakingBadge(); updateReadCounter(); }, 0);
+    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); updateNewsCounts(); applyBreakingBadge(); updateReadCounter(); applyBlacklist(); updateSentimentDonut(); }, 0);
   }
   function emptyRow() {
     return '<div class="news-item"><div class="news-title" style="color:#9a988f">لا توجد أخبار متاحة حالياً</div></div>';
@@ -696,6 +696,14 @@
     if (r.score) {
       var sbS = $("sb-score");
       if (sbS) { sbS.textContent = r.score.score != null ? r.score.score + "/10" : "—"; sbS.style.color = r.score.color || ""; }
+      var yest = getYesterdayScore();
+      var delta = $("sb-delta");
+      if (delta && r.score.score != null && yest != null) {
+        var diff = parseFloat((r.score.score - yest).toFixed(1));
+        var absDiff = Math.abs(diff);
+        delta.textContent = (diff > 0 ? "▲ +" : diff < 0 ? "▼ −" : "= ") + absDiff + " عن أمس";
+        delta.className = "sb-delta " + (diff > 0 ? "up" : diff < 0 ? "dn" : "");
+      }
     }
     var sbV = $("sb-vix");
     if (sbV && r.vix) sbV.textContent = r.vix.current != null ? num(r.vix.current, 1) : "—";
@@ -1108,6 +1116,9 @@
     updateStickyBar(r);
     checkScoreChange(r);
     checkStaleData();
+    if (r.score && r.score.score != null) saveDailyScore(r.score.score);
+    checkVixAlert(r);
+    if (window._portfolioRefresh) window._portfolioRefresh();
     origNewsHtml = {};   // reset sort cache on each refresh
   }
 
@@ -1259,6 +1270,217 @@
     if (navn) navn.addEventListener("click", function (e) { e.preventDefault(); printNewsOnly(); });
   }
 
+  // ---- 1. Yesterday score comparison (sticky bar delta) -------------------
+  var SCORE_HIST_KEY = "mb-score-hist-v1";
+  function saveDailyScore(score) {
+    var today = new Date().toISOString().split("T")[0];
+    var hist; try { hist = JSON.parse(localStorage.getItem(SCORE_HIST_KEY) || "{}"); } catch(e) { hist = {}; }
+    hist[today] = score;
+    var keys = Object.keys(hist).sort(); while (keys.length > 30) { delete hist[keys.shift()]; }
+    try { localStorage.setItem(SCORE_HIST_KEY, JSON.stringify(hist)); } catch(e) {}
+  }
+  function getYesterdayScore() {
+    var yest = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    try { var h = JSON.parse(localStorage.getItem(SCORE_HIST_KEY) || "{}"); return h[yest] != null ? parseFloat(h[yest]) : null; } catch(e) { return null; }
+  }
+
+  // ---- 2. VIX threshold alert ---------------------------------------------
+  var VIX_ALERT_KEY = "mb-vixalert-v1";
+  var _vixAlertThreshold = null;
+  function setupVixAlert() {
+    var inp = $("vix-alert-inp"), btn = $("vix-alert-set"), status = $("vix-alert-status");
+    if (!inp) return;
+    try { var saved = localStorage.getItem(VIX_ALERT_KEY); if (saved) { _vixAlertThreshold = parseFloat(saved); inp.value = saved; } } catch(e) {}
+    function updateStatus() {
+      if (!status) return;
+      if (_vixAlertThreshold != null) { status.textContent = "🔔 تنبيه عند VIX > " + _vixAlertThreshold; if (btn) btn.classList.add("active"); }
+      else { status.textContent = ""; if (btn) btn.classList.remove("active"); }
+    }
+    if (btn) btn.addEventListener("click", function() {
+      var v = parseFloat(inp.value);
+      if (isNaN(v) || v <= 0) { _vixAlertThreshold = null; try { localStorage.removeItem(VIX_ALERT_KEY); } catch(e) {} toast("🔕 تم إلغاء تنبيه VIX"); }
+      else { _vixAlertThreshold = v; try { localStorage.setItem(VIX_ALERT_KEY, v); } catch(e) {} toast("🔔 سيتم تنبيهك عندما يتجاوز VIX " + v); }
+      updateStatus();
+    });
+    updateStatus();
+  }
+  function checkVixAlert(r) {
+    if (_vixAlertThreshold == null || !r || !r.vix || r.vix.current == null) return;
+    if (r.vix.current > _vixAlertThreshold) toast("⚠️ تنبيه: VIX وصل إلى " + num(r.vix.current, 1) + " — تجاوز حدك " + _vixAlertThreshold);
+  }
+
+  // ---- 3. Portfolio calculator --------------------------------------------
+  var PORTFOLIO_KEY = "mb-portfolio-v1";
+  var PORTFOLIO_COINS = [
+    { sym:"BTC",  ticker:"BTC"  },
+    { sym:"ETH",  ticker:"ETH"  },
+    { sym:"GOLD", ticker:"GC=F" },
+    { sym:"CASH", ticker:null   }
+  ];
+  function getTickerPrice(ticker) {
+    if (!lastReport || !lastReport.quotes || !ticker) return 0;
+    for (var i = 0; i < lastReport.quotes.length; i++) {
+      var q = lastReport.quotes[i];
+      if (q && q.symbol && q.price) {
+        var sym = q.symbol.toUpperCase().replace("-USD","").replace("=F","");
+        if (sym === ticker.toUpperCase().replace("-USD","").replace("=F","")) return parseFloat(q.price) || 0;
+      }
+    }
+    return 0;
+  }
+  function updatePortfolioTotals() {
+    var saved; try { saved = JSON.parse(localStorage.getItem(PORTFOLIO_KEY) || "{}"); } catch(e) { saved = {}; }
+    var prices = { BTC: getTickerPrice("BTC"), ETH: getTickerPrice("ETH"), GOLD: getTickerPrice("GC"), CASH: 1 };
+    var total = 0;
+    PORTFOLIO_COINS.forEach(function(c) {
+      var qty = parseFloat(saved[c.sym]) || 0;
+      var price = prices[c.sym] || 0;
+      var usd = c.sym === "CASH" ? qty : qty * price;
+      total += usd;
+      var usdEl = $("pf-usd-" + c.sym.toLowerCase());
+      if (usdEl) usdEl.textContent = (price > 0 || c.sym === "CASH") && qty > 0 ? "$" + num(usd, 0) : "—";
+    });
+    var tv = $("pf-total"); if (tv) tv.textContent = total > 0 ? "$" + num(total, 0) : "$0";
+  }
+  function setupPortfolio() {
+    var saved; try { saved = JSON.parse(localStorage.getItem(PORTFOLIO_KEY) || "{}"); } catch(e) { saved = {}; }
+    PORTFOLIO_COINS.forEach(function(c) {
+      var inp = $("pf-inp-" + c.sym.toLowerCase()); if (!inp) return;
+      inp.value = saved[c.sym] || "";
+      inp.addEventListener("input", function() {
+        saved[c.sym] = inp.value;
+        try { localStorage.setItem(PORTFOLIO_KEY, JSON.stringify(saved)); } catch(e) {}
+        updatePortfolioTotals();
+      });
+    });
+    updatePortfolioTotals();
+    window._portfolioRefresh = updatePortfolioTotals;
+  }
+
+  // ---- 4. Settings backup / restore ----------------------------------------
+  function setupSettingsBackup() {
+    var expBtn = $("btn-settings-export"), impBtn = $("btn-settings-import"), impFile = $("settings-import-file");
+    if (expBtn) expBtn.addEventListener("click", function() {
+      var data = {};
+      Object.keys(localStorage).filter(function(k) { return k.startsWith("mb-"); }).forEach(function(k) { data[k] = localStorage.getItem(k); });
+      var a = document.createElement("a");
+      a.href = "data:application/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
+      a.download = "market-brief-backup-" + new Date().toISOString().split("T")[0] + ".json";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      toast("📦 تم تصدير " + Object.keys(data).length + " إعداد");
+    });
+    if (impBtn && impFile) {
+      impBtn.addEventListener("click", function() { impFile.click(); });
+      impFile.addEventListener("change", function() {
+        var file = impFile.files[0]; if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            var data = JSON.parse(e.target.result); var count = 0;
+            Object.keys(data).forEach(function(k) { if (k.startsWith("mb-")) { localStorage.setItem(k, data[k]); count++; } });
+            toast("✅ تم استيراد " + count + " إعداد — أعِد تحميل الصفحة");
+          } catch(err) { toast("❌ ملف غير صالح"); }
+        };
+        reader.readAsText(file);
+      });
+    }
+  }
+
+  // ---- 5. Word blacklist (hides news containing these words) ---------------
+  var blacklistWords = [];
+  function applyBlacklist() {
+    document.querySelectorAll(".news-item[data-url]").forEach(function(el) {
+      if (!blacklistWords.length) { el.classList.remove("bl-hidden"); return; }
+      var title = ((el.querySelector(".news-title") || {}).textContent || "").toLowerCase();
+      el.classList.toggle("bl-hidden", blacklistWords.some(function(w) { return w && title.includes(w.toLowerCase()); }));
+    });
+    updateReadCounter();
+  }
+  function setupBlacklist() {
+    var inp = $("blacklist-inp"); if (!inp) return;
+    var key = "mb-blacklist-v1";
+    try { inp.value = localStorage.getItem(key) || ""; } catch(e) {}
+    function update() {
+      blacklistWords = inp.value.split(/[,،\s]+/).map(function(w) { return w.trim(); }).filter(Boolean);
+      try { localStorage.setItem(key, inp.value); } catch(e) {}
+      applyBlacklist();
+    }
+    update(); inp.addEventListener("input", update);
+  }
+
+  // ---- 6. Sentiment donut SVG chart ----------------------------------------
+  function updateSentimentDonut() {
+    var svg = $("sent-donut-svg"); if (!svg) return;
+    var all = document.querySelectorAll(".news-item[data-sent]");
+    var pos = 0, neg = 0, neu = 0;
+    all.forEach(function(el) {
+      if (el.classList.contains("ni-hidden") || el.classList.contains("bl-hidden") || el.style.display === "none") return;
+      var s = parseFloat(el.dataset.sent || 0);
+      if (s > 0) pos++; else if (s < 0) neg++; else neu++;
+    });
+    var total = pos + neg + neu; if (!total) return;
+    var R = 17, cx = 21, cy = 21, tau = 2 * Math.PI;
+    function arc(start, end, color) {
+      if (end - start < 0.002) return "";
+      if (end - start >= tau - 0.002) return '<circle cx="'+cx+'" cy="'+cy+'" r="'+R+'" fill="none" stroke="'+color+'" stroke-width="5"/>';
+      var s = { x: cx + R * Math.cos(start - Math.PI/2), y: cy + R * Math.sin(start - Math.PI/2) };
+      var e = { x: cx + R * Math.cos(end   - Math.PI/2), y: cy + R * Math.sin(end   - Math.PI/2) };
+      return '<path d="M '+s.x.toFixed(2)+' '+s.y.toFixed(2)+' A '+R+' '+R+' 0 '+(end-start>Math.PI?1:0)+' 1 '+e.x.toFixed(2)+' '+e.y.toFixed(2)+'" fill="none" stroke="'+color+'" stroke-width="5" stroke-linecap="round"/>';
+    }
+    var a0 = 0, a1 = (pos/total)*tau, a2 = a1 + (neu/total)*tau, a3 = tau;
+    svg.innerHTML = arc(a0,a1,"#22C97A") + arc(a1,a2,"rgba(120,114,104,.5)") + arc(a2,a3,"#E05050");
+    var lPos = $("sdl-pos"), lNeg = $("sdl-neg"), lNeu = $("sdl-neu");
+    if (lPos) lPos.textContent = pos + " (" + Math.round(pos/total*100) + "%)";
+    if (lNeg) lNeg.textContent = neg + " (" + Math.round(neg/total*100) + "%)";
+    if (lNeu) lNeu.textContent = neu + " (" + Math.round(neu/total*100) + "%)";
+  }
+
+  // ---- 7. Export read history as CSV --------------------------------------
+  function setupExportReadHistory() {
+    var btn = $("btn-export-read-hist"); if (!btn) return;
+    btn.addEventListener("click", function() {
+      var urls = Array.from(readNews);
+      if (!urls.length) { toast("لم تقرأ أي خبر بعد"); return; }
+      var a = document.createElement("a");
+      a.href = "data:text/csv;charset=utf-8," + encodeURIComponent("url\n" + urls.join("\n"));
+      a.download = "الأخبار_المقروءة_" + new Date().toISOString().split("T")[0] + ".csv";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      toast("📊 تم تصدير " + urls.length + " خبر مقروء");
+    });
+  }
+
+  // ---- 8. Heatmap calendar (history page — reads from window.MB_HIST_SCORES) --
+  function buildHeatmap() {
+    var wrap = $("heatmap-grid"); if (!wrap) return;
+    var data = window.MB_HIST_SCORES || {};
+    var today = new Date(); today.setHours(0,0,0,0);
+    var cols = 13; var rows = 7; var days = cols * rows;
+    var start = new Date(today); start.setDate(start.getDate() - (days - 1));
+    var grid = document.createDocumentFragment();
+    for (var c = 0; c < cols; c++) {
+      var col = document.createElement("div"); col.className = "heatmap-col";
+      for (var r2 = 0; r2 < rows; r2++) {
+        var d = new Date(start); d.setDate(start.getDate() + c * rows + r2);
+        var key = d.toISOString().split("T")[0];
+        var score = data[key] != null ? parseFloat(data[key]) : null;
+        var cell = document.createElement("div"); cell.className = "hm-cell";
+        var level = score == null ? "none" : score >= 7 ? "high" : score >= 4 ? "mid" : "low";
+        cell.dataset.score = level;
+        cell.title = key + (score != null ? " · تقييم: " + score + "/10" : " · لا بيانات");
+        col.appendChild(cell);
+      }
+      grid.appendChild(col);
+    }
+    wrap.appendChild(grid);
+    // find label for month range
+    var lbl = $("heatmap-range");
+    if (lbl) {
+      var sm = start.toLocaleDateString("ar", { month:"short", year:"numeric" });
+      var em = today.toLocaleDateString("ar", { month:"short", year:"numeric" });
+      lbl.textContent = sm === em ? sm : sm + " — " + em;
+    }
+  }
+
   // ---- boot -------------------------------------------------------------
   document.addEventListener("DOMContentLoaded", function () {
     syncStill();
@@ -1292,6 +1514,12 @@
     setupHideNews();
     patchNewsSortTime();
     setupExportFull();
+    setupVixAlert();
+    setupPortfolio();
+    setupSettingsBackup();
+    setupBlacklist();
+    setupExportReadHistory();
+    buildHeatmap();
     startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }

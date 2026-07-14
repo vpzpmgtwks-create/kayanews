@@ -198,6 +198,37 @@
             <button class="notes-action-btn" id="btn-export-notes">📥 تصدير الملاحظات</button>
             <button class="notes-action-btn" id="btn-export-full">📋 النشرة + الملاحظات</button>
             <button class="notes-action-btn" id="btn-clear-read">🧹 مسح المقروءة</button>
+            <button class="notes-action-btn" id="btn-export-read-hist">📊 تصدير المقروءة CSV</button>
+          </div>
+          <!-- Portfolio calculator -->
+          <div class="portfolio-wrap">
+            <div class="portfolio-title">💰 حاسبة محفظتي</div>
+            <div class="portfolio-rows">
+              <div class="portfolio-row">
+                <span class="portfolio-symbol">BTC</span>
+                <input type="number" id="pf-inp-btc" class="portfolio-inp" placeholder="الكمية" min="0" step="any">
+                <span class="portfolio-usd" id="pf-usd-btc">—</span>
+              </div>
+              <div class="portfolio-row">
+                <span class="portfolio-symbol">ETH</span>
+                <input type="number" id="pf-inp-eth" class="portfolio-inp" placeholder="الكمية" min="0" step="any">
+                <span class="portfolio-usd" id="pf-usd-eth">—</span>
+              </div>
+              <div class="portfolio-row">
+                <span class="portfolio-symbol">ذهب</span>
+                <input type="number" id="pf-inp-gold" class="portfolio-inp" placeholder="بالأوقية" min="0" step="any">
+                <span class="portfolio-usd" id="pf-usd-gold">—</span>
+              </div>
+              <div class="portfolio-row">
+                <span class="portfolio-symbol">نقدي</span>
+                <input type="number" id="pf-inp-cash" class="portfolio-inp" placeholder="بالدولار" min="0" step="any">
+                <span class="portfolio-usd" id="pf-usd-cash">—</span>
+              </div>
+            </div>
+            <div class="portfolio-total">
+              <span class="portfolio-total-label">الإجمالي</span>
+              <span class="portfolio-total-val" id="pf-total">$0</span>
+            </div>
           </div>
         </div>
         <div class="report-share-row" id="report-share-row" style="display:none">
@@ -237,6 +268,12 @@
           <div class="vix-stat"><div class="k">إغلاق سابق</div><div class="v" id="vix-prev">—</div></div>
           <div class="vix-stat"><div class="k">أدنى (شهر)</div><div class="v" id="vix-low">—</div></div>
         </div>
+        <div class="vix-alert-wrap">
+          <span style="font-size:11px;color:var(--ink-3);font-weight:700">🔔 تنبيه VIX</span>
+          <input type="number" id="vix-alert-inp" class="vix-alert-inp" placeholder="مثال: 30" min="1" max="100" step="0.5">
+          <button class="vix-alert-btn" id="vix-alert-set">تفعيل</button>
+          <span class="vix-alert-status" id="vix-alert-status"></span>
+        </div>
         <div class="tv-chart">
           <svg id="vix-spark" viewBox="0 0 640 260" preserveAspectRatio="none"
                style="width:100%;height:100%" role="img" aria-label="VIX 1-month chart"></svg>
@@ -265,16 +302,29 @@
         <button class="news-ctrl-btn" id="btn-news-sort">↕ الترتيب</button>
         <button class="news-ctrl-btn" id="btn-news-compact">📰 مختصر</button>
       </div>
-      <div class="watch-wrap" style="margin-bottom:10px">
+      <div class="watch-wrap" style="margin-bottom:6px">
         <input type="text" id="watch-inp" class="watch-inp" placeholder="🔦 كلمات مراقبة: نفط، فيد، بيتكوين — تتلوّن في الأخبار">
       </div>
-      <div class="src-chips" id="src-chips" style="display:none"></div>
-      <div class="sent-filter" id="sent-filter">
-        <button class="sent-chip active" data-sent-f="all">الكل</button>
-        <button class="sent-chip pos" data-sent-f="pos">📈 إيجابي</button>
-        <button class="sent-chip neg" data-sent-f="neg">📉 سلبي</button>
-        <button class="sent-chip" data-sent-f="neu">➡️ محايد</button>
-        <button class="news-ctrl-btn" id="btn-copy-all-news" style="margin-right:auto">⧉ نسخ الكل</button>
+      <div class="blacklist-wrap">
+        <input type="text" id="blacklist-inp" class="blacklist-inp" placeholder="🚫 كلمات استبعاد: كلمات تُخفي الأخبار التي تحتويها (مفصولة بفاصلة)">
+      </div>
+      <div class="src-chips" id="src-chips" style="display:none;margin-top:8px"></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:8px">
+        <div class="sent-filter" id="sent-filter" style="margin-top:0;flex:1;min-width:0">
+          <button class="sent-chip active" data-sent-f="all">الكل</button>
+          <button class="sent-chip pos" data-sent-f="pos">📈 إيجابي</button>
+          <button class="sent-chip neg" data-sent-f="neg">📉 سلبي</button>
+          <button class="sent-chip" data-sent-f="neu">➡️ محايد</button>
+          <button class="news-ctrl-btn" id="btn-copy-all-news" style="margin-right:auto">⧉ نسخ الكل</button>
+        </div>
+        <div class="sent-donut-wrap" style="flex-shrink:0">
+          <svg id="sent-donut-svg" viewBox="0 0 42 42" width="42" height="42"></svg>
+          <div class="sent-donut-labels">
+            <div class="sdl-row"><span class="sdl-dot" style="background:#22C97A"></span><span id="sdl-pos">—</span></div>
+            <div class="sdl-row"><span class="sdl-dot" style="background:rgba(120,114,104,.5)"></span><span id="sdl-neu">—</span></div>
+            <div class="sdl-row"><span class="sdl-dot" style="background:#E05050"></span><span id="sdl-neg">—</span></div>
+          </div>
+        </div>
       </div>
       <div class="grid news-cols">
         <div class="card">
@@ -308,6 +358,11 @@
       آخر تحديث: <b id="gen-at">—</b> · المصادر أخبار RSS مجانية + Yahoo Finance + مؤشرات الخوف والطمع ·
       <b>نشرة السوق</b>
       <span class="visit-streak" id="visit-streak"></span>
+      <div class="settings-backup-row" style="margin-top:10px">
+        <button class="sb-btn" id="btn-settings-export">📦 تصدير الإعدادات</button>
+        <button class="sb-btn" id="btn-settings-import">📥 استيراد الإعدادات</button>
+        <input type="file" id="settings-import-file" accept=".json" style="display:none">
+      </div>
       <button class="btn-reminder" id="btn-reminder" title="تذكير يومي بالنشرة">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         تذكير يومي
@@ -354,6 +409,7 @@
   <div class="sb-item">
     <span class="sb-label">التقييم</span>
     <span class="sb-val" id="sb-score">—</span>
+    <span class="sb-delta" id="sb-delta"></span>
   </div>
   <div class="sb-sep"></div>
   <div class="sb-item">

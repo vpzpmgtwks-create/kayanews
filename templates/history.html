@@ -43,6 +43,20 @@
   <section class="card mt">
     <div class="eyebrow">📑 سجلّ التقارير · {{ rows|length }} يوم محفوظ</div>
     {% if rows %}
+    <!-- Heatmap calendar -->
+    <div class="heatmap-wrap">
+      <div class="heatmap-title">🗓️ خريطة التقييمات — آخر 91 يوم · <span id="heatmap-range"></span></div>
+      <div class="heatmap-grid" id="heatmap-grid"></div>
+      <div class="hm-legend">
+        <span class="hm-swatch" style="background:rgba(34,201,122,.65)"></span>ممتاز (7+)
+        <span class="hm-swatch" style="background:rgba(240,190,70,.6);margin-right:6px"></span>متوسط (4-7)
+        <span class="hm-swatch" style="background:rgba(224,80,80,.6);margin-right:6px"></span>ضعيف
+        <span class="hm-swatch" style="background:var(--line-2);margin-right:6px"></span>لا بيانات
+      </div>
+    </div>
+    <script>
+    window.MB_HIST_SCORES = { {% for row in rows %}{% if row.score is not none %}"{{ row.date }}": {{ row.score }}{% if not loop.last %},{% endif %}{% endif %}{% endfor %} };
+    </script>
     <div class="hist-weekly-compare" id="hist-weekly-compare"></div>
     <div class="hist-score-filter" id="hist-month-filter" style="margin-bottom:10px"></div>
     <div class="hist-score-filter" id="hist-score-filter">
