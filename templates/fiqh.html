@@ -406,6 +406,14 @@
   </nav>
 </div>
 
+<!-- PROGRESS BAR -->
+<div class="fiqh-progress-wrap">
+  <div class="fiqh-progress-bar-bg">
+    <div class="fiqh-progress-bar-fill" id="fiqh-prog-fill" style="width:0%"></div>
+  </div>
+  <div class="fiqh-progress-label" id="fiqh-prog-label">قرأت 0 من 15 رسالة</div>
+</div>
+
 <!-- DAY STRIP -->
 <div class="strip-outer">
   <div class="day-strip" id="day-strip"></div>
@@ -498,6 +506,7 @@
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
       </button>
       <button class="modal-copy" id="m-copy">📋 نسخ</button>
+      <button class="modal-copy" id="m-wa" style="background:rgba(37,211,102,.1);border-color:rgba(37,211,102,.3);color:#25d366">💬 واتساب</button>
       <button class="modal-tg" onclick="window.open('https://t.me/+qBtY37bvQow2NWZk','_blank','noopener')">✈ القناة</button>
     </div>
   </div>
@@ -1114,6 +1123,12 @@ function updateReadUI() {
     const chk = el.querySelector('.read-check');
     if (chk) { chk.classList.toggle('checked', readSet.has(i)); chk.textContent = readSet.has(i) ? '✓' : ''; }
   });
+  // progress bar
+  const pct = MESSAGES.length ? (readSet.size / MESSAGES.length * 100).toFixed(0) : 0;
+  const fill = document.getElementById('fiqh-prog-fill');
+  const lbl  = document.getElementById('fiqh-prog-label');
+  if (fill) fill.style.width = pct + '%';
+  if (lbl)  lbl.textContent = 'قرأت ' + readSet.size + ' من ' + MESSAGES.length + ' رسالة' + (readSet.size === MESSAGES.length ? ' 🎉 أتممت الكتاب!' : '');
 }
 
 // ── DAY STRIP ──
@@ -1243,6 +1258,9 @@ document.getElementById('modal-bg').addEventListener('click', e => { if (e.targe
 document.getElementById('m-prev').addEventListener('click', () => { if (curIdx > 0) { curIdx--; renderModal(); markRead(curIdx); } });
 document.getElementById('m-next').addEventListener('click', () => { if (curIdx < MESSAGES.length-1) { curIdx++; renderModal(); markRead(curIdx); } });
 document.getElementById('m-copy').addEventListener('click', () => copyMsg(MESSAGES[curIdx].full, document.getElementById('m-copy')));
+document.getElementById('m-wa').addEventListener('click', () => {
+  window.open('https://wa.me/?text=' + encodeURIComponent(MESSAGES[curIdx].full), '_blank', 'noopener');
+});
 
 document.addEventListener('keydown', e => {
   if (!document.getElementById('modal-bg').classList.contains('open')) return;

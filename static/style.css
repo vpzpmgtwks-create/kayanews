@@ -1172,6 +1172,62 @@ mark.hw { background: rgba(240,190,70,.25); color: inherit; border-radius: 3px; 
 .hsc-val  { font-size: 20px; font-weight: 800; color: var(--ink); }
 .hsc-sub  { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
 
+/* ─── Sentiment Filter ─── */
+.sent-filter { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.sent-chip {
+  font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 999px;
+  border: 1px solid var(--line-2); color: var(--ink-3); background: none;
+  cursor: pointer; font-family: "Tajawal",sans-serif; transition: all .15s;
+}
+.sent-chip:hover { border-color: rgba(240,120,24,.35); color: var(--orange-3); }
+.sent-chip.active { border-color: rgba(240,120,24,.45); color: var(--orange); background: rgba(240,120,24,.1); }
+.sent-chip.pos.active { border-color: rgba(34,201,122,.45); color: var(--up); background: rgba(34,201,122,.1); }
+.sent-chip.neg.active { border-color: rgba(224,80,80,.45); color: var(--down); background: rgba(224,80,80,.1); }
+
+/* ─── News Count Badge ─── */
+.news-count-badge {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--line-2); color: var(--ink-3);
+  margin-right: 8px;
+}
+
+/* ─── Fiqh Progress Bar ─── */
+.fiqh-progress-wrap {
+  max-width: 1040px; margin: 16px auto 0; padding: 0 20px;
+}
+.fiqh-progress-bar-bg {
+  width: 100%; height: 6px; background: var(--line-2); border-radius: 999px; overflow: hidden;
+}
+.fiqh-progress-bar-fill {
+  height: 100%; border-radius: 999px;
+  background: linear-gradient(90deg, var(--orange), var(--orange-3));
+  transition: width .5s cubic-bezier(.16,1,.3,1);
+}
+.fiqh-progress-label {
+  font-size: 11px; color: var(--ink-3); margin-top: 5px; text-align: left;
+}
+
+/* ─── Reminder Button ─── */
+.btn-reminder {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 12px; font-weight: 700; padding: 6px 13px; border-radius: 999px;
+  border: 1px solid var(--line-2); color: var(--ink-3); background: none;
+  cursor: pointer; font-family: "Tajawal",sans-serif; transition: all .18s;
+}
+.btn-reminder:hover { border-color: rgba(240,120,24,.4); color: var(--orange); }
+.btn-reminder.active { border-color: rgba(34,201,122,.4); color: var(--up); background: rgba(34,201,122,.07); }
+
+/* ─── History Score Filter ─── */
+.hist-score-filter { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.hsf-chip {
+  font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 999px;
+  border: 1px solid var(--line-2); color: var(--ink-3); background: none;
+  cursor: pointer; font-family: "Tajawal",sans-serif; transition: all .15s;
+}
+.hsf-chip:hover { border-color: rgba(240,120,24,.35); color: var(--orange-3); }
+.hsf-chip.active { border-color: rgba(240,120,24,.45); color: var(--orange); background: rgba(240,120,24,.1); }
+
 /* Freeze one-shot entrances when tab is hidden */
 body.still,
 body.still::before,

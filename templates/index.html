@@ -261,13 +261,20 @@
         <input type="text" id="watch-inp" class="watch-inp" placeholder="🔦 كلمات مراقبة: نفط، فيد، بيتكوين — تتلوّن في الأخبار">
       </div>
       <div class="src-chips" id="src-chips" style="display:none"></div>
+      <div class="sent-filter" id="sent-filter">
+        <button class="sent-chip active" data-sent-f="all">الكل</button>
+        <button class="sent-chip pos" data-sent-f="pos">📈 إيجابي</button>
+        <button class="sent-chip neg" data-sent-f="neg">📉 سلبي</button>
+        <button class="sent-chip" data-sent-f="neu">➡️ محايد</button>
+        <button class="news-ctrl-btn" id="btn-copy-all-news" style="margin-right:auto">⧉ نسخ الكل</button>
+      </div>
       <div class="grid news-cols">
         <div class="card">
-          <h2>🌍 السياسة والجيوسياسة</h2>
+          <h2>🌍 السياسة والجيوسياسة <span class="news-count-badge" id="geo-count-badge"></span></h2>
           <div class="news-list mt" id="geo-list"></div>
         </div>
         <div class="card">
-          <h2>📊 الاقتصاد والأسواق</h2>
+          <h2>📊 الاقتصاد والأسواق <span class="news-count-badge" id="mk-count-badge"></span></h2>
           <div class="news-list mt" id="mk-list"></div>
         </div>
       </div>
@@ -293,6 +300,10 @@
       آخر تحديث: <b id="gen-at">—</b> · المصادر أخبار RSS مجانية + Yahoo Finance + مؤشرات الخوف والطمع ·
       <b>نشرة السوق</b>
       <span class="visit-streak" id="visit-streak"></span>
+      <button class="btn-reminder" id="btn-reminder" title="تذكير يومي بالنشرة">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        تذكير يومي
+      </button>
     </div>
   </div>
 </div>

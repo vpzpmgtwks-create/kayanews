@@ -394,7 +394,7 @@
     if (m) m.innerHTML = (r.markets || []).map(newsItem).join("") || emptyRow();
     setText("news-count", r.news_count != null ? r.news_count : "—");
     if (newsSearchTerm) setTimeout(filterNews, 60);
-    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); }, 0);
+    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); updateNewsCounts(); }, 0);
   }
   function emptyRow() {
     return '<div class="news-item"><div class="news-title" style="color:#9a988f">لا توجد أخبار متاحة حالياً</div></div>';
@@ -855,6 +855,82 @@
     el.classList.toggle("stale", (Date.now() / 1000 - lastGenTs) / 60 > 8);
   }
 
+  // ---- sentiment filter -------------------------------------------------------
+  function setupSentimentFilter() {
+    var container = $("sent-filter"); if (!container) return;
+    var activeSent = "all";
+    container.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-sent-f]");
+      if (!btn) return;
+      activeSent = btn.dataset.sentF;
+      container.querySelectorAll("[data-sent-f]").forEach(function (b) { b.classList.toggle("active", b === btn); });
+      document.querySelectorAll(".news-item[data-sent]").forEach(function (el) {
+        if (activeSent === "all") { el.style.display = ""; return; }
+        var s = parseFloat(el.dataset.sent || 0);
+        var match = activeSent === "pos" ? s > 0 : activeSent === "neg" ? s < 0 : (s === 0 || isNaN(s));
+        el.style.display = match ? "" : "none";
+      });
+    });
+  }
+
+  // ---- news counts in section headers -----------------------------------------
+  function updateNewsCounts() {
+    var g = $("geo-list"), m = $("mk-list");
+    var gc = g ? g.querySelectorAll("a.news-item").length : 0;
+    var mc = m ? m.querySelectorAll("a.news-item").length : 0;
+    setText("geo-count-badge", gc || "");
+    setText("mk-count-badge", mc || "");
+  }
+
+  // ---- copy all news ----------------------------------------------------------
+  function setupCopyAllNews() {
+    var btn = $("btn-copy-all-news"); if (!btn) return;
+    btn.addEventListener("click", function () {
+      var items = Array.from(document.querySelectorAll(".news-item")).filter(function (el) {
+        return el.style.display !== "none" && el.href;
+      });
+      if (!items.length) { toast("لا توجد أخبار"); return; }
+      var lines = items.map(function (el, i) {
+        var title = (el.querySelector(".news-title") || {}).textContent || "";
+        return (i + 1) + ". " + title + "\n   " + (el.href || "");
+      });
+      var text = "📰 أخبار اليوم — نشرة السوق:\n\n" + lines.join("\n\n") +
+        "\n\n📢 https://t.me/+qBtY37bvQow2NWZk";
+      navigator.clipboard.writeText(text).then(function () {
+        toast("✅ تم نسخ " + items.length + " خبر");
+      }).catch(function () { toast("تعذّر النسخ"); });
+    });
+  }
+
+  // ---- daily browser reminder -------------------------------------------------
+  function setupDailyReminder() {
+    var btn = $("btn-reminder"); if (!btn) return;
+    var KEY = "mb-notif-v1";
+    function updateBtn() {
+      var on = (function () { try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; } })();
+      btn.classList.toggle("active", on);
+      btn.title = on ? "إيقاف تذكير الإشعار" : "تذكير يومي بالنشرة (إشعار)";
+      btn.innerHTML = on
+        ? '<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/><line x1="1" y1="1" x2="23" y2="23"/></svg> إيقاف التذكير'
+        : '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> تذكير يومي';
+    }
+    updateBtn();
+    btn.addEventListener("click", function () {
+      if (!("Notification" in window)) { toast("المتصفح لا يدعم الإشعارات"); return; }
+      Notification.requestPermission().then(function (perm) {
+        if (perm === "granted") {
+          var on = !((function () { try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; } })());
+          try { localStorage.setItem(KEY, on ? "1" : "0"); } catch (e) {}
+          updateBtn();
+          if (on) {
+            new Notification("نشرة السوق 📊", { body: "تم تفعيل التذكير اليومي بالنشرة", icon: "" });
+            toast("🔔 تم تفعيل التذكير اليومي");
+          } else { toast("🔕 تم إيقاف التذكير"); }
+        } else { toast("لم يُمنح إذن الإشعارات"); }
+      });
+    });
+  }
+
   // ---- tab title with score emoji -------------------------------------------
   function updateTabTitle(r) {
     if (!r || !r.score) return;
@@ -1078,6 +1154,9 @@
     setupWatchwords();
     setupRiskSlider();
     setupNotesActions();
+    setupSentimentFilter();
+    setupCopyAllNews();
+    setupDailyReminder();
     startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }

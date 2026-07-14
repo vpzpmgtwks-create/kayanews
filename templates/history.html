@@ -43,6 +43,12 @@
   <section class="card mt">
     <div class="eyebrow">📑 سجلّ التقارير · {{ rows|length }} يوم محفوظ</div>
     {% if rows %}
+    <div class="hist-score-filter" id="hist-score-filter">
+      <button class="hsf-chip active" data-range="all">الكل</button>
+      <button class="hsf-chip" data-range="good">🟢 ممتاز (7+)</button>
+      <button class="hsf-chip" data-range="mid">🟡 متوسط (4–7)</button>
+      <button class="hsf-chip" data-range="bad">🔴 ضعيف (أقل من 4)</button>
+    </div>
     <div class="hist-search-wrap">
       <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="hist-search" class="hist-search-inp" placeholder="ابحث في الزبدة والتواريخ والأوصاف...">
@@ -188,6 +194,24 @@
       el.innerHTML = fire + "زيارة #" + d.count;
     }
   })();
+
+  // ── Score range filter ─────────────────────────────────────────────────────
+  var scoreFilter = document.getElementById('hist-score-filter');
+  if (scoreFilter) {
+    scoreFilter.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-range]'); if (!btn) return;
+      scoreFilter.querySelectorAll('[data-range]').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var range = btn.dataset.range;
+      document.querySelectorAll('table.hist tbody tr').forEach(function (row) {
+        if (range === 'all') { row.style.display = ''; return; }
+        var scoreCell = row.cells[3];
+        var sc = scoreCell ? parseFloat(scoreCell.textContent) : NaN;
+        var show = range === 'good' ? sc >= 7 : range === 'mid' ? (sc >= 4 && sc < 7) : sc < 4;
+        row.style.display = (show || isNaN(sc)) ? '' : 'none';
+      });
+    });
+  }
 
   // ── Export CSV ─────────────────────────────────────────────────────────────
   var expBtn = document.getElementById("hist-export-btn");
