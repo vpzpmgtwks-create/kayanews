@@ -414,6 +414,15 @@
   <div class="fiqh-progress-label" id="fiqh-prog-label">قرأت 0 من 15 رسالة</div>
 </div>
 
+<!-- COMPLETION CARD -->
+<div class="fiqh-done-card" id="fiqh-done-card">
+  <div class="fiqh-done-inner">
+    <div class="fiqh-done-emoji">🎉</div>
+    <div class="fiqh-done-title">أتممت الكتاب بالكامل!</div>
+    <div class="fiqh-done-sub">قرأت جميع رسائل "فقه العملات الرقمية" الـ 15 — بارك الله في علمك.</div>
+  </div>
+</div>
+
 <!-- DAY STRIP -->
 <div class="strip-outer">
   <div class="day-strip" id="day-strip"></div>
@@ -1129,6 +1138,8 @@ function updateReadUI() {
   const lbl  = document.getElementById('fiqh-prog-label');
   if (fill) fill.style.width = pct + '%';
   if (lbl)  lbl.textContent = 'قرأت ' + readSet.size + ' من ' + MESSAGES.length + ' رسالة' + (readSet.size === MESSAGES.length ? ' 🎉 أتممت الكتاب!' : '');
+  var doneCard = document.getElementById('fiqh-done-card');
+  if (doneCard) doneCard.classList.toggle('show', readSet.size === MESSAGES.length);
 }
 
 // ── DAY STRIP ──

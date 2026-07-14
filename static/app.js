@@ -13,6 +13,7 @@
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var initialDone = false;
+  var _seenUrls = new Set();
   var lastReport = null;          // most recent data, for re-render on focus
   var numState = new WeakMap();   // element -> last numeric value shown
   var gaugeVals = {};             // gauge id -> { v: rawValue, p: pct }
@@ -374,7 +375,11 @@
     var sc    = sentColor(n.sentiment);
     var tags  = (n.tags || []).slice(0, 3).map(function (t) { return '<span class="tag">' + esc(t) + "</span>"; }).join("");
     var read  = readNews.has(url) ? " news-read" : "";
-    return '<a class="news-item' + read + '" href="' + esc(url) + '" target="_blank" rel="noopener"' +
+    var sv    = parseFloat(n.sentiment || 0);
+    var sc2   = sv > 0 ? " s-pos" : sv < 0 ? " s-neg" : " s-neu";
+    var isNew = !readNews.has(url) && !_seenUrls.has(url) ? " is-new" : "";
+    _seenUrls.add(url);
+    return '<a class="news-item' + read + sc2 + isNew + '" href="' + esc(url) + '" target="_blank" rel="noopener"' +
       ' data-sent="' + (n.sentiment || 0) + '" data-url="' + esc(url) + '">' +
       '<div class="news-title">' + esc(title) + '</div>' +
       '<div class="news-meta">' +
@@ -855,6 +860,27 @@
     el.classList.toggle("stale", (Date.now() / 1000 - lastGenTs) / 60 > 8);
   }
 
+  // ---- refresh countdown bar --------------------------------------------------
+  function setupRefreshProg() {
+    var bar = $("refresh-prog"); if (!bar) return;
+    window._refreshProgUpdate = function () {
+      var pct = REFRESH > 0 ? ((REFRESH - Math.max(0, counter)) / REFRESH * 100).toFixed(1) : 0;
+      bar.style.width = pct + "%";
+    };
+  }
+
+  // ---- collapsible news sections ---------------------------------------------
+  function setupCollapsible() {
+    document.querySelectorAll(".card h2").forEach(function (h2) {
+      if (h2.closest("#geo-list") || h2.closest("#mk-list")) return;
+      h2.classList.add("news-section-toggle");
+      h2.addEventListener("click", function () {
+        var card = h2.closest(".card");
+        if (card) card.classList.toggle("section-collapsed");
+      });
+    });
+  }
+
   // ---- sentiment filter -------------------------------------------------------
   function setupSentimentFilter() {
     var container = $("sent-filter"); if (!container) return;
@@ -1007,6 +1033,7 @@
     setText("countdown", cd);
     setText("sb-cd", cd);
     renderUpdated();
+    if (window._refreshProgUpdate) window._refreshProgUpdate();
     if (counter <= 0) { counter = REFRESH; poll(); }
   }
   function loadbar(state) {
@@ -1157,6 +1184,8 @@
     setupSentimentFilter();
     setupCopyAllNews();
     setupDailyReminder();
+    setupRefreshProg();
+    setupCollapsible();
     startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }

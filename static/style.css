@@ -1228,6 +1228,60 @@ mark.hw { background: rgba(240,190,70,.25); color: inherit; border-radius: 3px; 
 .hsf-chip:hover { border-color: rgba(240,120,24,.35); color: var(--orange-3); }
 .hsf-chip.active { border-color: rgba(240,120,24,.45); color: var(--orange); background: rgba(240,120,24,.1); }
 
+/* ─── News Sentiment Color Border ─── */
+.news-item.s-pos { border-right: 3px solid rgba(34,201,122,.55); }
+.news-item.s-neg { border-right: 3px solid rgba(224,80,80,.55); }
+.news-item.s-neu { border-right: 3px solid rgba(120,114,104,.3); }
+
+/* ─── New Badge ─── */
+.news-item.is-new .news-title::after {
+  content: 'جديد';
+  display: inline-block; margin-right: 6px; vertical-align: middle;
+  font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 999px;
+  background: rgba(240,120,24,.14); border: 1px solid rgba(240,120,24,.28); color: var(--orange);
+}
+
+/* ─── Collapsible News Section ─── */
+.card h2.news-section-toggle { cursor: pointer; user-select: none; }
+.card h2.news-section-toggle::after { content: ' ▲'; font-size: 10px; color: var(--ink-3); transition: content .2s; }
+.card.section-collapsed h2.news-section-toggle::after { content: ' ▼'; }
+.card.section-collapsed .news-list,
+.card.section-collapsed .news-pinned-bar { display: none; }
+
+/* ─── Refresh Countdown Bar (bottom of page) ─── */
+.refresh-prog {
+  position: fixed; bottom: 0; right: 0; left: 0; height: 2px; z-index: 998;
+  background: linear-gradient(90deg, var(--orange-2), var(--orange-3));
+  width: 0%; pointer-events: none; opacity: 0.7;
+}
+
+/* ─── Fiqh Completion Card ─── */
+.fiqh-done-card { display: none; max-width: 1040px; margin: 20px auto 0; padding: 0 20px; }
+.fiqh-done-card.show { display: block; }
+.fiqh-done-inner {
+  background: linear-gradient(135deg, rgba(34,201,122,.07), rgba(240,120,24,.07));
+  border: 1px solid rgba(34,201,122,.28); border-radius: 16px;
+  padding: 22px 26px; text-align: center;
+}
+.fiqh-done-emoji { font-size: 38px; margin-bottom: 8px; }
+.fiqh-done-title { font-size: 17px; font-weight: 800; color: var(--up); }
+.fiqh-done-sub { font-size: 13px; color: var(--ink-2); margin-top: 5px; }
+
+/* ─── History Best Row ─── */
+table.hist tbody tr.hist-best td { background: rgba(34,201,122,.05); }
+table.hist tbody tr.hist-best td:first-child b { color: var(--up); }
+
+/* ─── History Weekly Compare ─── */
+.hist-weekly-compare { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.hwc-card {
+  flex: 1; min-width: 120px; background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px;
+}
+.hwc-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+.hwc-val { font-size: 19px; font-weight: 800; color: var(--ink); }
+.hwc-trend { font-size: 11px; color: var(--ink-3); margin-top: 3px; }
+.hwc-trend.up { color: var(--up); } .hwc-trend.dn { color: var(--down); }
+
 /* Freeze one-shot entrances when tab is hidden */
 body.still,
 body.still::before,

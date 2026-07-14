@@ -43,6 +43,7 @@
   <section class="card mt">
     <div class="eyebrow">📑 سجلّ التقارير · {{ rows|length }} يوم محفوظ</div>
     {% if rows %}
+    <div class="hist-weekly-compare" id="hist-weekly-compare"></div>
     <div class="hist-score-filter" id="hist-score-filter">
       <button class="hsf-chip active" data-range="all">الكل</button>
       <button class="hsf-chip" data-range="good">🟢 ممتاز (7+)</button>
@@ -193,6 +194,36 @@
       var fire = d.streak > 1 ? '<span class="streak-fire">🔥</span> ' + d.streak + " أيام متتالية · " : "";
       el.innerHTML = fire + "زيارة #" + d.count;
     }
+  })();
+
+  // ── Weekly comparison + best row ───────────────────────────────────────────
+  (function () {
+    if (!ROWS.length) return;
+    // best row highlight
+    var bestScore = Math.max.apply(null, ROWS.map(function (r) { return r.score != null ? r.score : -1; }));
+    document.querySelectorAll('table.hist tbody tr').forEach(function (tr, i) {
+      if (ROWS[i] && ROWS[i].score === bestScore) tr.classList.add('hist-best');
+    });
+    // weekly comparison
+    var el = document.getElementById('hist-weekly-compare');
+    if (!el || ROWS.length < 2) return;
+    var scored = ROWS.filter(function (r) { return r.score != null; });
+    var thisW  = scored.slice(0, Math.min(7, scored.length));
+    var lastW  = scored.slice(Math.min(7, scored.length), Math.min(14, scored.length));
+    function avg(arr) { return arr.length ? (arr.reduce(function (a, b) { return a + b.score; }, 0) / arr.length).toFixed(1) : null; }
+    var tAvg = avg(thisW), lAvg = avg(lastW);
+    var diff = (tAvg != null && lAvg != null) ? (parseFloat(tAvg) - parseFloat(lAvg)).toFixed(1) : null;
+    var trendCls = diff > 0 ? 'up' : diff < 0 ? 'dn' : '';
+    var trendTxt = diff > 0 ? '↑ ' + diff + ' عن الأسبوع الماضي' : diff < 0 ? '↓ ' + Math.abs(diff) + ' عن الأسبوع الماضي' : '← مستقر';
+    function card(lbl, val, trend, cls) {
+      return '<div class="hwc-card"><div class="hwc-label">' + lbl + '</div>' +
+        '<div class="hwc-val">' + (val != null ? val + '/10' : '—') + '</div>' +
+        '<div class="hwc-trend ' + (cls||'') + '">' + (trend||'') + '</div></div>';
+    }
+    el.innerHTML =
+      card('هذا الأسبوع (' + thisW.length + ' أيام)', tAvg, diff != null ? trendTxt : '', trendCls) +
+      card('الأسبوع الماضي (' + lastW.length + ' أيام)', lAvg, '', '') +
+      card('أفضل يوم', bestScore, '', '');
   })();
 
   // ── Score range filter ─────────────────────────────────────────────────────
