@@ -132,19 +132,31 @@ NEWS_FEEDS = [
     # Broad news
     ("Al Jazeera",       "https://www.aljazeera.com/xml/rss/all.xml",                  "geopolitics"),
     ("BBC World",        "https://feeds.bbci.co.uk/news/world/rss.xml",                "geopolitics"),
+    # Financial Juice — aggregates top financial Twitter/X analysts in real time
+    ("Financial Juice",  "https://financialjuice.com/feed.ashx",                       "markets"),
     # Specialized financial / macro
     ("ForexLive",        "https://www.forexlive.com/feed/news",                        "markets"),
     ("CNBC Markets",     "https://www.cnbc.com/id/100003114/device/rss/rss.html",      "markets"),
     ("CNBC Economy",     "https://www.cnbc.com/id/20910258/device/rss/rss.html",       "markets"),
     ("MarketWatch",      "https://feeds.content.dowjones.io/public/rss/mw_topstories", "markets"),
+    # Precision macro analysis (Substack newsletters from top analysts)
+    ("Kobeissi Letter",  "https://thekobeissiletter.substack.com/feed",                "markets"),
+    ("Wolf Street",      "https://wolfstreet.com/feed/",                               "markets"),
     # Crypto — specialized
     ("CoinDesk",         "https://www.coindesk.com/arc/outboundfeeds/rss/",            "markets"),
     ("CoinTelegraph",    "https://cointelegraph.com/rss",                              "markets"),
+    ("Blockworks",       "https://blockworks.co/feed",                                 "markets"),
     # Energy / Commodities
     ("OilPrice",         "https://oilprice.com/rss/main",                              "markets"),
     # Broad financial coverage
     ("Investing.com",    "https://www.investing.com/rss/news.rss",                     "markets"),
 ]
+
+# Precision / wire sources get a relevance boost so they rank above generic news
+PRECISION_SOURCES = {
+    "Financial Juice", "Kobeissi Letter", "Wolf Street", "ForexLive",
+    "Reuters World", "Reuters Politics", "Reuters Business", "Reuters Finance",
+}
 
 VIX_URL = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1mo"
 QUOTE_URL = "https://query1.finance.yahoo.com/v8/finance/chart/{sym}?interval=1d&range=5d"
@@ -206,6 +218,13 @@ FIN_KEYWORDS = [
     "ethereum", "btc", "eth", "defi", "blockchain", "altcoin", "stablecoin",
     "binance", "coinbase", "sec", "etf", "halving", "forex", "fx",
     "oil", "opec", "commodities", "silver", "copper", "energy",
+    # Precision macro / rates
+    "fomc", "powell", "lagarde", "boe", "bank of england", "pboc", "rba",
+    "quantitative", "liquidity", "balance sheet", "debt ceiling", "fiscal",
+    "trade deficit", "current account", "pmi", "ism", "nfp", "adp",
+    "options", "futures", "derivatives", "swap", "spread", "basis points",
+    "ipo", "earnings beat", "earnings miss", "guidance", "revenue",
+    "bankruptcy", "default risk", "credit", "leverage", "margin call",
 ]
 NEG_KEYWORDS = [
     "war", "invasion", "attack", "strike", "missile", "sanction", "crash",
@@ -524,7 +543,9 @@ def fetch_news(force: bool = False) -> list[dict]:
             relevance = len(geo_hits) * 2 + len(fin_hits) * 2
             if category == "markets":
                 relevance += 1
-            if relevance == 0:
+            if source in PRECISION_SOURCES and relevance > 0:
+                relevance += 2  # wire / precision source boost
+            if relevance < 2:  # require at least one keyword hit
                 continue
 
             items.append({
