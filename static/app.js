@@ -392,6 +392,8 @@
       '<button class="ni-copy" data-copy-title="' + esc(title) + '" data-copy-url="' + esc(url) + '" title="نسخ العنوان">⧉</button>' +
       '<button class="ni-wa"   data-wa-title="'   + esc(title) + '" data-wa-url="'   + esc(url) + '" title="مشاركة واتساب">💬</button>' +
       '<button class="ni-tg"   data-tg-title="'   + esc(title) + '" data-tg-url="'   + esc(url) + '" title="مشاركة تليجرام">✈</button>' +
+      '<button class="ni-rl"   data-rl-url="'    + esc(url)   + '" data-rl-title="'  + esc(title) + '" title="احفظ لاحقاً">🔖</button>' +
+      '<button class="ni-tts" data-tts-text="'  + esc(title) + '" title="قراءة بالصوت">🔊</button>' +
       '<button class="ni-hide" title="إخفاء">✕</button>' +
       '</span></div></a>';
   }
@@ -402,7 +404,7 @@
     if (m) m.innerHTML = (r.markets || []).map(newsItem).join("") || emptyRow();
     setText("news-count", r.news_count != null ? r.news_count : "—");
     if (newsSearchTerm) setTimeout(filterNews, 60);
-    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); updateNewsCounts(); applyBreakingBadge(); updateReadCounter(); applyBlacklist(); applyTimeFilter(); updateSentimentDonut(); }, 0);
+    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); updateNewsCounts(); applyBreakingBadge(); updateReadCounter(); applyBlacklist(); applyTimeFilter(); applyTagFilter(); updateSentimentDonut(); buildTagFilter(); applyReadLaterBadges(); }, 0);
   }
   function emptyRow() {
     return '<div class="news-item"><div class="news-title" style="color:#9a988f">لا توجد أخبار متاحة حالياً</div></div>';
@@ -440,9 +442,11 @@
     var waBtn   = $("btn-wa-share");
     var row     = $("report-share-row");
 
+    var tgBtn = $("btn-tg-report");
     function updateShare() {
       var text = formatReport(lastReport);
       if (waBtn && text) waBtn.href = "https://wa.me/?text=" + encodeURIComponent(text);
+      if (tgBtn && text) tgBtn.onclick = function() { window.open("https://t.me/share/url?url=" + encodeURIComponent("https://t.me/+qBtY37bvQow2NWZk") + "&text=" + encodeURIComponent(text), "_blank", "noopener"); };
       if (row) row.style.display = "";
     }
     window._updateShare = updateShare;
@@ -1128,6 +1132,8 @@
     checkVixAlert(r);
     checkBtcAlert(r);
     updateCompositeRisk(r);
+    updateMacroDashboard();
+    buildWeeklySummary();
     if (window._portfolioRefresh) window._portfolioRefresh();
     origNewsHtml = {};   // reset sort cache on each refresh
   }
@@ -1278,6 +1284,237 @@
     if (n) n.addEventListener("click", printNewsOnly);
     var navn = $("nav-print-news");
     if (navn) navn.addEventListener("click", function (e) { e.preventDefault(); printNewsOnly(); });
+  }
+
+  // ---- Read Later ---------------------------------------------------------
+  var RL_KEY = "mb-readlater-v1";
+  function getRlItems() { try { return JSON.parse(localStorage.getItem(RL_KEY) || "[]"); } catch(e) { return []; } }
+  function saveRlItems(arr) { try { localStorage.setItem(RL_KEY, JSON.stringify(arr)); } catch(e) {} }
+  function toggleReadLater(url, title) {
+    var items = getRlItems();
+    var idx = items.findIndex(function(i) { return i.url === url; });
+    if (idx >= 0) { items.splice(idx, 1); saveRlItems(items); return false; }
+    items.unshift({ url: url, title: title, saved: new Date().toISOString().split("T")[0] });
+    if (items.length > 100) items.pop();
+    saveRlItems(items); return true;
+  }
+  function isInReadLater(url) { return getRlItems().some(function(i) { return i.url === url; }); }
+  function applyReadLaterBadges() {
+    document.querySelectorAll(".ni-rl[data-rl-url]").forEach(function(btn) {
+      btn.classList.toggle("saved", isInReadLater(btn.dataset.rlUrl));
+      btn.title = isInReadLater(btn.dataset.rlUrl) ? "محفوظ في اقرأ لاحقاً" : "احفظ لاحقاً";
+    });
+    var cnt = $("rl-count"); if (cnt) { var n = getRlItems().length; cnt.textContent = n || ""; }
+  }
+  function setupReadLater() {
+    document.addEventListener("click", function(e) {
+      var btn = e.target.closest(".ni-rl"); if (!btn) return;
+      e.preventDefault(); e.stopPropagation();
+      var added = toggleReadLater(btn.dataset.rlUrl, btn.dataset.rlTitle);
+      applyReadLaterBadges();
+      toast(added ? "🔖 حُفظ في قائمة القراءة" : "🗑️ حُذف من قائمة القراءة");
+    });
+    var openBtn = $("btn-open-readlater"), overlay = $("readlater-overlay"), closeBtn = $("rl-close-btn");
+    function openOverlay() {
+      var items = getRlItems(); var list = $("rl-list"); if (!list) return;
+      if (!items.length) { list.innerHTML = '<p class="rl-empty">لا توجد مقالات محفوظة بعد — اضغط 🔖 على أي خبر.</p>'; }
+      else {
+        list.innerHTML = items.map(function(it, idx) {
+          return '<div class="rl-item"><div class="rl-item-title"><a href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.title) + '</a><br><span style="font-size:10px;color:var(--ink-3)">' + (it.saved||"") + '</span></div><button class="rl-item-del" data-rl-idx="' + idx + '" title="حذف">✕</button></div>';
+        }).join("");
+        list.querySelectorAll(".rl-item-del").forEach(function(del) {
+          del.addEventListener("click", function() {
+            var arr = getRlItems(); arr.splice(parseInt(del.dataset.rlIdx,10),1); saveRlItems(arr);
+            applyReadLaterBadges(); openOverlay();
+          });
+        });
+      }
+      var cnt = list.closest(".readlater-panel") && list.closest(".readlater-panel").querySelector(".readlater-count");
+      if (cnt) cnt.textContent = items.length ? "(" + items.length + ")" : "";
+      if (overlay) overlay.classList.add("open");
+    }
+    if (openBtn) openBtn.addEventListener("click", openOverlay);
+    if (closeBtn) closeBtn.addEventListener("click", function() { if (overlay) overlay.classList.remove("open"); });
+    if (overlay) overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.classList.remove("open"); });
+    applyReadLaterBadges();
+  }
+
+  // ---- Text-to-Speech (TTS) -----------------------------------------------
+  var _ttsActive = null; // currently speaking button
+  function setupTts() {
+    if (!window.speechSynthesis) return;
+    document.addEventListener("click", function(e) {
+      var btn = e.target.closest(".ni-tts"); if (!btn) return;
+      e.preventDefault(); e.stopPropagation();
+      if (_ttsActive) {
+        window.speechSynthesis.cancel();
+        if (_ttsActive !== btn) {
+          _ttsActive.classList.remove("speaking");
+          _ttsActive = null;
+          speak(btn);
+        } else {
+          _ttsActive.classList.remove("speaking"); _ttsActive = null;
+        }
+        return;
+      }
+      speak(btn);
+    });
+    function speak(btn) {
+      var text = btn.dataset.ttsText || ""; if (!text) return;
+      var utt = new SpeechSynthesisUtterance(text); utt.lang = "ar-SA"; utt.rate = 0.95;
+      utt.onend = function() { if (_ttsActive) _ttsActive.classList.remove("speaking"); _ttsActive = null; };
+      window.speechSynthesis.speak(utt);
+      _ttsActive = btn; btn.classList.add("speaking");
+    }
+  }
+
+  // ---- Tag Filter ---------------------------------------------------------
+  var _activeTags = new Set();
+  function buildTagFilter() {
+    var container = $("tag-filter"); if (!container) return;
+    var tagCounts = {};
+    document.querySelectorAll(".news-item .tag").forEach(function(el) {
+      var t = el.textContent.trim(); if (t) tagCounts[t] = (tagCounts[t] || 0) + 1;
+    });
+    var tags = Object.keys(tagCounts).sort(function(a,b) { return tagCounts[b] - tagCounts[a]; }).slice(0, 20);
+    if (!tags.length) { container.style.display = "none"; return; }
+    container.style.display = "";
+    var html = tags.map(function(t) {
+      return '<button class="tag-chip' + (_activeTags.has(t) ? " active" : "") + '" data-tag="' + esc(t) + '">' + esc(t) + ' <span style="opacity:.5;font-size:9px">' + tagCounts[t] + '</span></button>';
+    }).join("") + '<button class="tag-filter-toggle" id="tag-filter-toggle">▼ المزيد</button>';
+    container.innerHTML = html;
+    container.querySelectorAll(".tag-chip").forEach(function(chip) {
+      chip.addEventListener("click", function() {
+        var t = chip.dataset.tag;
+        if (_activeTags.has(t)) _activeTags.delete(t); else _activeTags.add(t);
+        chip.classList.toggle("active", _activeTags.has(t));
+        applyTagFilter();
+      });
+    });
+    var tog = $("tag-filter-toggle");
+    if (tog) tog.addEventListener("click", function() {
+      container.classList.toggle("expanded");
+      tog.textContent = container.classList.contains("expanded") ? "▲ أقل" : "▼ المزيد";
+    });
+  }
+  function applyTagFilter() {
+    if (!_activeTags.size) { document.querySelectorAll(".news-item").forEach(function(el) { el.classList.remove("tag-hidden"); }); updateReadCounter(); return; }
+    document.querySelectorAll(".news-item[data-url]").forEach(function(el) {
+      var tags = Array.from(el.querySelectorAll(".tag")).map(function(t) { return t.textContent.trim(); });
+      el.classList.toggle("tag-hidden", !Array.from(_activeTags).some(function(t) { return tags.includes(t); }));
+    });
+    updateReadCounter();
+  }
+
+  // ---- Weekly Summary from localStorage -----------------------------------
+  function buildWeeklySummary() {
+    var wrap = $("weekly-summary"); if (!wrap) return;
+    var hist; try { hist = JSON.parse(localStorage.getItem(SCORE_HIST_KEY) || "{}"); } catch(e) { hist = {}; }
+    var keys = Object.keys(hist).sort().slice(-7);
+    if (keys.length < 2) { wrap.style.display = "none"; return; }
+    wrap.style.display = "";
+    var scores = keys.map(function(k) { return parseFloat(hist[k]); });
+    var avg = (scores.reduce(function(a,b){return a+b;},0) / scores.length).toFixed(1);
+    var best = Math.max.apply(null, scores); var worst = Math.min.apply(null, scores);
+    var trend = scores[scores.length-1] - scores[0];
+    var trendColor = trend > 0 ? "#22C97A" : trend < 0 ? "#E05050" : "#7A7268";
+    var trendTxt = trend > 0 ? "▲ تحسّن" : trend < 0 ? "▼ تراجع" : "= مستقر";
+    var avgColor = avg >= 7 ? "#22C97A" : avg >= 4 ? "#F0BE46" : "#E05050";
+    $("ws-avg") && ($("ws-avg").textContent = avg, $("ws-avg").style.color = avgColor);
+    $("ws-best") && ($("ws-best").textContent = best, $("ws-best").style.color = "#22C97A");
+    $("ws-worst") && ($("ws-worst").textContent = worst, $("ws-worst").style.color = "#E05050");
+    $("ws-trend") && ($("ws-trend").textContent = trendTxt, $("ws-trend").style.color = trendColor);
+    $("ws-days") && ($("ws-days").textContent = keys.length + " أيام");
+  }
+
+  // ---- Countdown Timer ----------------------------------------------------
+  var _cdInterval = null, _cdRemaining = 0;
+  function setupCountdownTimer() {
+    var inp = $("cd-inp"), btn = $("cd-btn"), disp = $("cd-display"); if (!inp || !btn) return;
+    function tick() {
+      _cdRemaining--;
+      if (disp) {
+        var m = Math.floor(_cdRemaining/60), s = _cdRemaining%60;
+        disp.textContent = (m<10?"0"+m:m)+":"+(s<10?"0"+s:s);
+        disp.classList.toggle("urgent", _cdRemaining <= 10);
+      }
+      if (_cdRemaining <= 0) {
+        clearInterval(_cdInterval); _cdInterval = null;
+        btn.textContent = "ابدأ"; btn.classList.remove("running");
+        toast("⏰ انتهى المؤقت!"); beep();
+      }
+    }
+    function beep() {
+      try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        var osc = ctx.createOscillator(); var gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880; gain.gain.setValueAtTime(.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.001, ctx.currentTime + .6);
+        osc.start(ctx.currentTime); osc.stop(ctx.currentTime + .6);
+      } catch(e) {}
+    }
+    btn.addEventListener("click", function() {
+      if (_cdInterval) {
+        clearInterval(_cdInterval); _cdInterval = null;
+        btn.textContent = "ابدأ"; btn.classList.remove("running");
+        if (disp) disp.classList.remove("urgent");
+        return;
+      }
+      var mins = parseInt(inp.value, 10) || 5;
+      _cdRemaining = mins * 60;
+      var m = Math.floor(_cdRemaining/60), s = _cdRemaining%60;
+      if (disp) disp.textContent = (m<10?"0"+m:m)+":"+(s<10?"0"+s:s);
+      _cdInterval = setInterval(tick, 1000);
+      btn.textContent = "إيقاف"; btn.classList.add("running");
+      toast("⏲️ بدأ المؤقت — " + mins + " دقيقة");
+    });
+  }
+
+  // ---- Floating Sticky Note -----------------------------------------------
+  var FLOATNOTE_KEY = "mb-floatnote-v1";
+  function setupFloatingNote() {
+    var fab = $("floatnote-fab"), panel = $("floatnote-panel"), ta = $("floatnote-ta"), saved = $("floatnote-saved");
+    if (!fab || !panel || !ta) return;
+    try { ta.value = localStorage.getItem(FLOATNOTE_KEY) || ""; } catch(e) {}
+    fab.addEventListener("click", function() { panel.classList.toggle("open"); if (panel.classList.contains("open")) ta.focus(); });
+    ta.addEventListener("input", function() {
+      try { localStorage.setItem(FLOATNOTE_KEY, ta.value); } catch(e) {}
+      if (saved) { saved.textContent = "✓ محفوظ"; setTimeout(function() { if (saved) saved.textContent = ""; }, 1500); }
+    });
+    document.addEventListener("keydown", function(e) {
+      if (e.key === "Escape" && panel.classList.contains("open")) panel.classList.remove("open");
+    });
+  }
+
+  // ---- Macro Dashboard Card -----------------------------------------------
+  var MACRO_SYMS = [
+    { sym:"BTC",  label:"بيتكوين", match:["BTC"] },
+    { sym:"ETH",  label:"إيثيريوم", match:["ETH"] },
+    { sym:"GC",   label:"ذهب", match:["GC=F","GC"] },
+    { sym:"OIL",  label:"نفط WTI", match:["CL=F","WTI","OIL"] },
+    { sym:"SPX",  label:"S&P 500", match:["^GSPC","SPX","SPY","S&P"] },
+    { sym:"DXY",  label:"الدولار DXY", match:["DX=F","DXY","USD"] }
+  ];
+  function updateMacroDashboard() {
+    if (!lastReport || !lastReport.quotes) return;
+    MACRO_SYMS.forEach(function(def) {
+      var q = null;
+      for (var i = 0; i < lastReport.quotes.length && !q; i++) {
+        var r = lastReport.quotes[i]; if (!r || !r.symbol) continue;
+        var sym = r.symbol.toUpperCase();
+        if (def.match.some(function(m) { return sym.includes(m.toUpperCase()); })) q = r;
+      }
+      var valEl = $("macro-val-" + def.sym.toLowerCase()), chgEl = $("macro-chg-" + def.sym.toLowerCase());
+      if (!q || !valEl) return;
+      var price = parseFloat(q.price);
+      valEl.textContent = price >= 1000 ? num(price, 0) : num(price, 2);
+      if (chgEl) {
+        var chg = parseFloat(q.change_pct || 0);
+        chgEl.textContent = (chg >= 0 ? "▲ +" : "▼ ") + Math.abs(chg).toFixed(2) + "%";
+        chgEl.style.color = chg >= 0 ? "#22C97A" : "#E05050";
+      }
+    });
   }
 
   // ---- BTC price alert ----------------------------------------------------
@@ -1709,6 +1946,11 @@
     setupSnapshot();
     setupSessionTimer();
     setupGroupBySource();
+    setupReadLater();
+    setupTts();
+    setupCountdownTimer();
+    setupFloatingNote();
+    buildWeeklySummary();
     startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }

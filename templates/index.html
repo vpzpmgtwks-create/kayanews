@@ -212,6 +212,19 @@
             <button class="notes-action-btn" id="btn-clear-read">🧹 مسح المقروءة</button>
             <button class="notes-action-btn" id="btn-export-read-hist">📊 تصدير المقروءة CSV</button>
           </div>
+          <!-- Macro Dashboard -->
+          <div class="macro-card">
+            <div class="macro-card-title">💹 لوحة الماكرو السريعة</div>
+            <div class="macro-grid">
+              <div class="macro-item"><div class="macro-item-sym">BTC</div><div class="macro-item-val" id="macro-val-btc">—</div><div class="macro-item-chg" id="macro-chg-btc">—</div></div>
+              <div class="macro-item"><div class="macro-item-sym">ETH</div><div class="macro-item-val" id="macro-val-eth">—</div><div class="macro-item-chg" id="macro-chg-eth">—</div></div>
+              <div class="macro-item"><div class="macro-item-sym">ذهب</div><div class="macro-item-val" id="macro-val-gc">—</div><div class="macro-item-chg" id="macro-chg-gc">—</div></div>
+              <div class="macro-item"><div class="macro-item-sym">نفط</div><div class="macro-item-val" id="macro-val-oil">—</div><div class="macro-item-chg" id="macro-chg-oil">—</div></div>
+              <div class="macro-item"><div class="macro-item-sym">S&amp;P</div><div class="macro-item-val" id="macro-val-spx">—</div><div class="macro-item-chg" id="macro-chg-spx">—</div></div>
+              <div class="macro-item"><div class="macro-item-sym">DXY</div><div class="macro-item-val" id="macro-val-dxy">—</div><div class="macro-item-chg" id="macro-chg-dxy">—</div></div>
+            </div>
+          </div>
+
           <!-- Portfolio calculator -->
           <div class="portfolio-wrap">
             <div class="portfolio-title">💰 حاسبة محفظتي</div>
@@ -254,10 +267,26 @@
             </div>
           </div>
         </div>
+        <!-- Weekly summary from localStorage -->
+        <div class="weekly-summary" id="weekly-summary" style="display:none">
+          <div class="weekly-summary-title">📊 ملخص آخر 7 أيام من سجلك الشخصي</div>
+          <div class="weekly-summary-grid">
+            <div class="ws-card"><div class="ws-card-val" id="ws-avg">—</div><div class="ws-card-lbl">متوسط التقييم</div></div>
+            <div class="ws-card"><div class="ws-card-val" id="ws-best">—</div><div class="ws-card-lbl">أفضل يوم</div></div>
+            <div class="ws-card"><div class="ws-card-val" id="ws-worst">—</div><div class="ws-card-lbl">أسوأ يوم</div></div>
+            <div class="ws-card"><div class="ws-card-val" id="ws-trend">—</div><div class="ws-card-lbl">الاتجاه</div></div>
+          </div>
+          <div class="ws-trend"><span id="ws-days"></span></div>
+        </div>
+
         <div class="report-share-row" id="report-share-row" style="display:none">
           <button class="share-report-btn" id="btn-copy-report">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
             نسخ التقرير
+          </button>
+          <button class="share-report-btn" id="btn-tg-report">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            تليجرام
           </button>
           <a class="share-report-btn wa-btn" id="btn-wa-share" href="#" target="_blank" rel="noopener">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.134.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.553 4.116 1.524 5.847L0 24l6.336-1.502A11.955 11.955 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 0 1-5.01-1.374l-.36-.213-3.73.884.924-3.638-.233-.376A9.818 9.818 0 1 1 12 21.818z"/></svg>
@@ -314,6 +343,7 @@
     <!-- News -->
     <section class="section reveal" id="news">
       <div class="sec-head"><span class="sec-num">٠٦</span><div class="eyebrow">الأخبار · <span id="news-count">—</span> خبر مُرشّح</div><span class="news-read-counter" id="news-read-counter">قرأت <b>0</b>/0</span></div>
+      <div class="tag-filter" id="tag-filter" style="display:none"></div>
       <div class="time-filter" id="time-filter">
         <button class="tf-chip active" data-tf="0">📅 كل الأخبار</button>
         <button class="tf-chip" data-tf="1">⏱ آخر ساعة</button>
@@ -402,6 +432,18 @@
         <span class="auto-dark-lbl">🌙 وضع ليلي تلقائي بعد</span>
         <input type="time" id="auto-dark-inp" class="auto-dark-inp" value="20:00">
       </div>
+      <!-- Countdown timer -->
+      <div class="countdown-wrap">
+        <span class="countdown-label">⏲️ مؤقت القراءة</span>
+        <input type="number" id="cd-inp" class="countdown-inp" value="5" min="1" max="120">
+        <span style="font-size:11px;color:var(--ink-3)">دقيقة</span>
+        <span class="countdown-display" id="cd-display">05:00</span>
+        <button class="countdown-btn" id="cd-btn">ابدأ</button>
+      </div>
+      <!-- Read-later button -->
+      <div class="snapshot-row" style="margin-top:8px">
+        <button class="snapshot-btn" id="btn-open-readlater">🔖 قائمة اقرأ لاحقاً <span id="rl-count" style="color:var(--orange)"></span></button>
+      </div>
       <div class="session-timer" style="margin-top:8px">
         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
         وقت الجلسة: <span id="session-timer-val">00:00</span>
@@ -430,6 +472,23 @@
   <button class="fab totop" id="totop" aria-label="العودة إلى الأعلى" title="أعلى الصفحة">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
   </button>
+</div>
+
+<!-- Read Later overlay -->
+<div class="readlater-overlay" id="readlater-overlay">
+  <div class="readlater-panel">
+    <h3>🔖 اقرأ لاحقاً <span class="readlater-count"></span></h3>
+    <div id="rl-list"></div>
+    <button class="rl-close" id="rl-close-btn">إغلاق</button>
+  </div>
+</div>
+
+<!-- Floating sticky note -->
+<div class="floatnote-fab" id="floatnote-fab" title="ملاحظة سريعة">📌</div>
+<div class="floatnote-panel" id="floatnote-panel">
+  <div class="floatnote-header">📌 ملاحظة طافية — مرئية دائماً</div>
+  <textarea class="floatnote-ta" id="floatnote-ta" placeholder="اكتب ملاحظة سريعة..."></textarea>
+  <div class="floatnote-save" id="floatnote-saved"></div>
 </div>
 
 <!-- Snapshot overlay -->
