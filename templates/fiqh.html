@@ -122,7 +122,19 @@
     .hero-title { font-size: clamp(22px, 4vw, 38px); font-weight: 800; line-height: 1.25; margin-bottom: 12px; }
     .hero-title em { color: var(--orange); font-style: normal; }
     .hero-sub { font-size: 14px; line-height: 1.85; color: var(--ink-2); max-width: 440px; margin-bottom: 24px; }
-    .hero-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+    .hero-stats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+    .dl-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 22px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--orange), var(--orange-2));
+      color: #fff; font-size: 14px; font-weight: 800;
+      text-decoration: none; border: none; cursor: pointer;
+      font-family: "Tajawal", sans-serif;
+      box-shadow: 0 8px 24px -6px rgba(240,120,24,.5);
+      transition: filter .18s, transform .18s;
+    }
+    .dl-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .dl-btn svg { flex-shrink: 0; }
     .stat-chip {
       display: flex; align-items: baseline; gap: 5px;
       background: var(--surface); border: 1px solid var(--line);
@@ -408,11 +420,15 @@
       مستخلص علمي يومي من كتاب "فقه العملات الرقمية — من التأصيل التاريخي إلى أحكام المعاملات". انقر على أي رسالة لقراءتها أو نسخها وإرسالها لقناتك.
     </p>
     <div class="hero-stats">
-      <div class="stat-chip"><span class="stat-val">148</span><span class="stat-key">صفحة</span></div>
+      <div class="stat-chip"><span class="stat-val">55</span><span class="stat-key">صفحة</span></div>
       <div class="stat-chip"><span class="stat-val">26</span><span class="stat-key">فصل</span></div>
       <div class="stat-chip"><span class="stat-val">15</span><span class="stat-key">رسالة</span></div>
       <div class="stat-chip"><span class="stat-val">2</span><span class="stat-key">قسم رئيسي</span></div>
     </div>
+    <a href="{{ url_for('static', filename='فقه_العملات_الرقمية.pdf') }}" download class="dl-btn">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      تحميل الكتاب PDF — 5.3 MB
+    </a>
   </div>
   <div class="side-panel">
     <span class="panel-label">بحث وتصفية</span>
