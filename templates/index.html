@@ -192,6 +192,18 @@
               <span class="risk-val" id="risk-val">متوسط</span>
             </div>
           </div>
+          <!-- Composite risk meter -->
+          <div class="risk-composite-wrap">
+            <div class="risk-composite-label">🎯 مقياس الخطر المركّب · VIX + التقييم + المشاعر</div>
+            <div class="risk-composite-track">
+              <div class="risk-composite-fill" id="composite-fill" style="width:50%;background:#F0BE46"></div>
+            </div>
+            <div class="risk-composite-nums">
+              <span>منخفض</span>
+              <span><span class="risk-composite-score" id="composite-score">—</span> <span id="composite-lbl"></span></span>
+              <span>مرتفع</span>
+            </div>
+          </div>
           <div class="notes-lbl" style="margin-top:14px">📝 ملاحظاتي اليوم</div>
           <textarea id="notes-ta" class="notes-ta" placeholder="اكتب تحليلك أو ملاحظاتك هنا — تُحفظ تلقائياً..."></textarea>
           <div class="notes-actions">
@@ -228,6 +240,17 @@
             <div class="portfolio-total">
               <span class="portfolio-total-label">الإجمالي</span>
               <span class="portfolio-total-val" id="pf-total">$0</span>
+            </div>
+            <!-- BTC price alert -->
+            <div class="btc-alert-wrap">
+              <span class="btc-alert-label">🚨 تنبيه BTC</span>
+              <input type="number" id="btc-alert-inp" class="btc-alert-inp" placeholder="السعر" min="1" step="100">
+              <select id="btc-alert-sel" class="btc-alert-sel">
+                <option value="above">يتجاوز ▲</option>
+                <option value="below">ينخفض دون ▼</option>
+              </select>
+              <button class="vix-alert-btn" id="btc-alert-set">تفعيل</button>
+              <span class="btc-alert-status" id="btc-alert-status"></span>
             </div>
           </div>
         </div>
@@ -291,6 +314,13 @@
     <!-- News -->
     <section class="section reveal" id="news">
       <div class="sec-head"><span class="sec-num">٠٦</span><div class="eyebrow">الأخبار · <span id="news-count">—</span> خبر مُرشّح</div><span class="news-read-counter" id="news-read-counter">قرأت <b>0</b>/0</span></div>
+      <div class="time-filter" id="time-filter">
+        <button class="tf-chip active" data-tf="0">📅 كل الأخبار</button>
+        <button class="tf-chip" data-tf="1">⏱ آخر ساعة</button>
+        <button class="tf-chip" data-tf="6">🕕 آخر 6 ساعات</button>
+        <button class="tf-chip" data-tf="24">📆 آخر 24 ساعة</button>
+        <button class="news-ctrl-btn" id="btn-group-src" style="margin-right:auto">📰 بالمصدر</button>
+      </div>
       <div class="news-filter-row">
         <div class="news-search-wrap">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -363,6 +393,19 @@
         <button class="sb-btn" id="btn-settings-import">📥 استيراد الإعدادات</button>
         <input type="file" id="settings-import-file" accept=".json" style="display:none">
       </div>
+      <div class="snapshot-row">
+        <button class="snapshot-btn" id="btn-save-snapshot">📸 حفظ لقطة اليوم</button>
+        <button class="snapshot-btn" id="btn-view-snapshots">📂 عرض اللقطات</button>
+        <span class="snapshot-count" id="snapshot-count"></span>
+      </div>
+      <div class="auto-dark-row" style="margin-top:8px">
+        <span class="auto-dark-lbl">🌙 وضع ليلي تلقائي بعد</span>
+        <input type="time" id="auto-dark-inp" class="auto-dark-inp" value="20:00">
+      </div>
+      <div class="session-timer" style="margin-top:8px">
+        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+        وقت الجلسة: <span id="session-timer-val">00:00</span>
+      </div>
       <button class="btn-reminder" id="btn-reminder" title="تذكير يومي بالنشرة">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         تذكير يومي
@@ -387,6 +430,16 @@
   <button class="fab totop" id="totop" aria-label="العودة إلى الأعلى" title="أعلى الصفحة">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
   </button>
+</div>
+
+<!-- Snapshot overlay -->
+<div class="snapshot-overlay" id="snapshot-overlay">
+  <div class="snapshot-panel">
+    <h3>📂 اللقطات اليومية المحفوظة</h3>
+    <div id="snapshot-list"></div>
+    <p class="snapshot-restore-note">تُحفظ تلقائياً عند الضغط على "حفظ لقطة اليوم"</p>
+    <button class="snapshot-close" id="snapshot-close">إغلاق</button>
+  </div>
 </div>
 
 <div class="shortcuts-overlay" id="shortcuts-overlay">

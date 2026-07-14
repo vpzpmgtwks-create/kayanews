@@ -379,8 +379,9 @@
     var sc2   = sv > 0 ? " s-pos" : sv < 0 ? " s-neg" : " s-neu";
     var isNew = !readNews.has(url) && !_seenUrls.has(url) ? " is-new" : "";
     _seenUrls.add(url);
+    var tsMs = n.published_str ? (function() { try { return new Date(n.published_str.replace(" UTC","Z").replace(" ","T")).getTime(); } catch(e) { return 0; } })() : 0;
     return '<a class="news-item' + read + sc2 + isNew + '" href="' + esc(url) + '" target="_blank" rel="noopener"' +
-      ' data-sent="' + (n.sentiment || 0) + '" data-url="' + esc(url) + '">' +
+      ' data-sent="' + (n.sentiment || 0) + '" data-url="' + esc(url) + '" data-ts="' + tsMs + '">' +
       '<div class="news-title">' + esc(title) + '</div>' +
       '<div class="news-meta">' +
       '<span class="dot-s" style="background:' + sc + '"></span>' +
@@ -390,6 +391,7 @@
       '<button class="ni-pin' + (pinnedUrls.has(url) ? ' pinned' : '') + '" data-pin-url="' + esc(url) + '" title="تثبيت">⭐</button>' +
       '<button class="ni-copy" data-copy-title="' + esc(title) + '" data-copy-url="' + esc(url) + '" title="نسخ العنوان">⧉</button>' +
       '<button class="ni-wa"   data-wa-title="'   + esc(title) + '" data-wa-url="'   + esc(url) + '" title="مشاركة واتساب">💬</button>' +
+      '<button class="ni-tg"   data-tg-title="'   + esc(title) + '" data-tg-url="'   + esc(url) + '" title="مشاركة تليجرام">✈</button>' +
       '<button class="ni-hide" title="إخفاء">✕</button>' +
       '</span></div></a>';
   }
@@ -400,7 +402,7 @@
     if (m) m.innerHTML = (r.markets || []).map(newsItem).join("") || emptyRow();
     setText("news-count", r.news_count != null ? r.news_count : "—");
     if (newsSearchTerm) setTimeout(filterNews, 60);
-    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); updateNewsCounts(); applyBreakingBadge(); updateReadCounter(); applyBlacklist(); updateSentimentDonut(); }, 0);
+    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); updateNewsCounts(); applyBreakingBadge(); updateReadCounter(); applyBlacklist(); applyTimeFilter(); updateSentimentDonut(); }, 0);
   }
   function emptyRow() {
     return '<div class="news-item"><div class="news-title" style="color:#9a988f">لا توجد أخبار متاحة حالياً</div></div>';
@@ -514,6 +516,12 @@
       if (wa) {
         e.preventDefault(); e.stopPropagation();
         window.open("https://wa.me/?text=" + encodeURIComponent(wa.dataset.waTitle + "\n" + wa.dataset.waUrl), "_blank", "noopener");
+        return;
+      }
+      var tg = e.target.closest(".ni-tg");
+      if (tg) {
+        e.preventDefault(); e.stopPropagation();
+        window.open("https://t.me/share/url?url=" + encodeURIComponent(tg.dataset.tgUrl) + "&text=" + encodeURIComponent(tg.dataset.tgTitle), "_blank", "noopener");
         return;
       }
       var cp = e.target.closest(".ni-copy");
@@ -1118,6 +1126,8 @@
     checkStaleData();
     if (r.score && r.score.score != null) saveDailyScore(r.score.score);
     checkVixAlert(r);
+    checkBtcAlert(r);
+    updateCompositeRisk(r);
     if (window._portfolioRefresh) window._portfolioRefresh();
     origNewsHtml = {};   // reset sort cache on each refresh
   }
@@ -1268,6 +1278,179 @@
     if (n) n.addEventListener("click", printNewsOnly);
     var navn = $("nav-print-news");
     if (navn) navn.addEventListener("click", function (e) { e.preventDefault(); printNewsOnly(); });
+  }
+
+  // ---- BTC price alert ----------------------------------------------------
+  var BTC_ALERT_KEY = "mb-btcalert-v1";
+  var _btcAlertVal = null, _btcAlertDir = "above";
+  function setupBtcAlert() {
+    var inp = $("btc-alert-inp"), sel = $("btc-alert-sel"), btn = $("btc-alert-set"), status = $("btc-alert-status");
+    if (!inp) return;
+    try { var sv = JSON.parse(localStorage.getItem(BTC_ALERT_KEY) || "null"); if (sv) { _btcAlertVal = sv.val; _btcAlertDir = sv.dir || "above"; inp.value = sv.val; if (sel) sel.value = sv.dir || "above"; } } catch(e) {}
+    function updateStatus() {
+      if (!status) return;
+      status.textContent = _btcAlertVal != null ? ("🔔 BTC " + (_btcAlertDir === "above" ? ">" : "<") + " $" + num(_btcAlertVal, 0)) : "";
+    }
+    if (btn) btn.addEventListener("click", function() {
+      var v = parseFloat(inp.value); var d = sel ? sel.value : "above";
+      if (isNaN(v) || v <= 0) { _btcAlertVal = null; try { localStorage.removeItem(BTC_ALERT_KEY); } catch(e) {} toast("🔕 تم إلغاء تنبيه BTC"); }
+      else { _btcAlertVal = v; _btcAlertDir = d; try { localStorage.setItem(BTC_ALERT_KEY, JSON.stringify({val:v,dir:d})); } catch(e) {} toast("🔔 سيتم تنبيهك عندما BTC " + (d==="above"?"يتجاوز":"ينخفض دون") + " $" + num(v,0)); }
+      updateStatus();
+    });
+    updateStatus();
+  }
+  var _btcAlertFired = false;
+  function checkBtcAlert(r) {
+    if (_btcAlertVal == null || !r || !r.quotes) return;
+    var btcQ = null;
+    for (var i = 0; i < r.quotes.length; i++) { var q = r.quotes[i]; if (q && q.symbol && q.symbol.toUpperCase().replace("-USD","") === "BTC" && q.price) { btcQ = parseFloat(q.price); break; } }
+    if (btcQ == null) return;
+    var triggered = _btcAlertDir === "above" ? btcQ > _btcAlertVal : btcQ < _btcAlertVal;
+    if (triggered && !_btcAlertFired) { _btcAlertFired = true; toast("🚨 BTC وصل إلى $" + num(btcQ, 0) + " — " + (_btcAlertDir === "above" ? "تجاوز" : "انخفض دون") + " $" + num(_btcAlertVal, 0)); }
+    if (!triggered) _btcAlertFired = false;
+  }
+
+  // ---- News time filter ---------------------------------------------------
+  var _timeFilter = 0; // 0=all, ms otherwise
+  function setupTimeFilter() {
+    var container = $("time-filter"); if (!container) return;
+    container.addEventListener("click", function(e) {
+      var btn = e.target.closest(".tf-chip"); if (!btn) return;
+      container.querySelectorAll(".tf-chip").forEach(function(c) { c.classList.remove("active"); });
+      btn.classList.add("active");
+      var h = parseInt(btn.dataset.tf, 10);
+      _timeFilter = h > 0 ? h * 3600000 : 0;
+      applyTimeFilter();
+    });
+  }
+  function applyTimeFilter() {
+    var now = Date.now();
+    document.querySelectorAll(".news-item[data-ts]").forEach(function(el) {
+      if (!_timeFilter) { el.classList.remove("tf-hidden"); return; }
+      var ts = parseInt(el.dataset.ts, 10);
+      el.classList.toggle("tf-hidden", !ts || (now - ts) > _timeFilter);
+    });
+    updateReadCounter();
+  }
+
+  // ---- Composite risk meter -----------------------------------------------
+  function updateCompositeRisk(r) {
+    var fill = $("composite-fill"), score = $("composite-score"), lbl = $("composite-lbl");
+    if (!fill || !r) return;
+    var vixRisk   = r.vix && r.vix.current != null ? Math.min(100, (r.vix.current / 40) * 100) : 50;
+    var scoreRisk = r.score && r.score.score != null ? Math.max(0, (1 - r.score.score / 10) * 100) : 50;
+    var sentRisk  = 50;
+    if (r.fear_greed_stocks && r.fear_greed_stocks.value != null) sentRisk = Math.max(0, 100 - r.fear_greed_stocks.value);
+    var composite = Math.round(vixRisk * 0.35 + scoreRisk * 0.40 + sentRisk * 0.25);
+    var color = composite >= 70 ? "#E05050" : composite >= 40 ? "#F0BE46" : "#22C97A";
+    fill.style.width = composite + "%";
+    fill.style.background = color;
+    if (score) { score.textContent = composite + "%"; score.style.color = color; }
+    if (lbl) lbl.textContent = composite >= 70 ? "مرتفع ⚠️" : composite >= 40 ? "متوسط" : "منخفض ✓";
+  }
+
+  // ---- Auto dark mode by time ---------------------------------------------
+  var AUTO_DARK_KEY = "mb-autodark-v1";
+  function setupAutoDark() {
+    var inp = $("auto-dark-inp"); if (!inp) return;
+    try { var saved = localStorage.getItem(AUTO_DARK_KEY); if (saved) inp.value = saved; } catch(e) {}
+    inp.addEventListener("change", function() {
+      try { localStorage.setItem(AUTO_DARK_KEY, inp.value); } catch(e) {}
+      checkAutoDark();
+    });
+    checkAutoDark();
+  }
+  function checkAutoDark() {
+    var inp = $("auto-dark-inp"); if (!inp || !inp.value) return;
+    var saved; try { saved = localStorage.getItem("mb-dark"); } catch(e) {}
+    if (saved !== null && saved !== undefined) return; // user manually set theme
+    var now = new Date(); var h = now.getHours(), m = now.getMinutes();
+    var cur = h * 60 + m;
+    var parts = inp.value.split(":"); if (parts.length < 2) return;
+    var thresh = parseInt(parts[0],10) * 60 + parseInt(parts[1],10);
+    applyTheme(cur >= thresh || cur < 360); // dark after set time, light 6am-threshold
+  }
+
+  // ---- Daily snapshot (save/restore today's report) -----------------------
+  var SNAP_KEY = "mb-snaps-v1";
+  function saveSnapshot() {
+    if (!lastReport) { toast("لا يوجد تقرير بعد"); return; }
+    var today = new Date().toISOString().split("T")[0];
+    var snaps; try { snaps = JSON.parse(localStorage.getItem(SNAP_KEY) || "[]"); } catch(e) { snaps = []; }
+    snaps = snaps.filter(function(s) { return s.date !== today; }); // replace today's
+    snaps.unshift({ date: today, score: lastReport.score ? lastReport.score.score : null, vix: lastReport.vix ? lastReport.vix.current : null, summary: lastReport.bottom_line || "" });
+    while (snaps.length > 30) snaps.pop();
+    try { localStorage.setItem(SNAP_KEY, JSON.stringify(snaps)); } catch(e) {}
+    updateSnapshotCount();
+    toast("📸 تم حفظ لقطة اليوم (" + today + ")");
+  }
+  function updateSnapshotCount() {
+    var el = $("snapshot-count"); if (!el) return;
+    var snaps; try { snaps = JSON.parse(localStorage.getItem(SNAP_KEY) || "[]"); } catch(e) { snaps = []; }
+    el.textContent = snaps.length ? snaps.length + " لقطة محفوظة" : "";
+  }
+  function setupSnapshot() {
+    var saveBtn = $("btn-save-snapshot"), viewBtn = $("btn-view-snapshots");
+    var overlay = $("snapshot-overlay"), closeBtn = $("snapshot-close");
+    if (saveBtn) saveBtn.addEventListener("click", saveSnapshot);
+    function openOverlay() {
+      var snaps; try { snaps = JSON.parse(localStorage.getItem(SNAP_KEY) || "[]"); } catch(e) { snaps = []; }
+      var list = $("snapshot-list"); if (!list) return;
+      if (!snaps.length) { list.innerHTML = '<p style="color:var(--ink-3);font-size:13px">لا توجد لقطات محفوظة بعد.</p>'; }
+      else {
+        list.innerHTML = snaps.map(function(s) {
+          var sc = s.score != null ? s.score + "/10" : "—";
+          var color = s.score >= 7 ? "#22C97A" : s.score >= 4 ? "#F0BE46" : "#E05050";
+          return '<div class="snapshot-item"><span class="snapshot-item-date">📅 ' + s.date + '</span><span class="snapshot-item-score" style="color:' + color + '">' + sc + '</span></div>';
+        }).join("");
+      }
+      if (overlay) overlay.classList.add("open");
+    }
+    if (viewBtn) viewBtn.addEventListener("click", openOverlay);
+    if (closeBtn) closeBtn.addEventListener("click", function() { if (overlay) overlay.classList.remove("open"); });
+    if (overlay) overlay.addEventListener("click", function(e) { if (e.target === overlay) overlay.classList.remove("open"); });
+    updateSnapshotCount();
+  }
+
+  // ---- Session timer -------------------------------------------------------
+  var _sessionStart = Date.now();
+  function setupSessionTimer() {
+    var el = $("session-timer-val"); if (!el) return;
+    function update() {
+      var elapsed = Math.floor((Date.now() - _sessionStart) / 1000);
+      var m = Math.floor(elapsed / 60), s = elapsed % 60;
+      el.textContent = (m < 10 ? "0" + m : m) + ":" + (s < 10 ? "0" + s : s);
+    }
+    update(); setInterval(update, 1000);
+  }
+
+  // ---- Group news by source -----------------------------------------------
+  var _groupedBySource = false;
+  function setupGroupBySource() {
+    var btn = $("btn-group-src"); if (!btn) return;
+    btn.addEventListener("click", function() {
+      _groupedBySource = !_groupedBySource;
+      btn.classList.toggle("active", _groupedBySource);
+      btn.textContent = _groupedBySource ? "📰 بالمصدر ✓" : "📰 بالمصدر";
+      ["geo-list","mk-list"].forEach(function(id) {
+        var el = $(id); if (!el) return;
+        var items = Array.from(el.querySelectorAll("a.news-item[data-url]"));
+        el.querySelectorAll(".src-group-hdr").forEach(function(h) { h.remove(); });
+        if (!_groupedBySource) return;
+        var groups = {};
+        items.forEach(function(item) {
+          var src = (item.querySelector(".src") || {}).textContent || "أخرى";
+          if (!groups[src]) groups[src] = [];
+          groups[src].push(item);
+        });
+        Object.keys(groups).sort().forEach(function(src) {
+          var hdr = document.createElement("div"); hdr.className = "src-group-hdr";
+          hdr.innerHTML = '<span>📰 ' + esc(src) + '</span><span style="font-size:10px">' + groups[src].length + ' خبر</span>';
+          el.appendChild(hdr);
+          groups[src].forEach(function(item) { el.appendChild(item); });
+        });
+      });
+    });
   }
 
   // ---- 1. Yesterday score comparison (sticky bar delta) -------------------
@@ -1520,6 +1703,12 @@
     setupBlacklist();
     setupExportReadHistory();
     buildHeatmap();
+    setupBtcAlert();
+    setupTimeFilter();
+    setupAutoDark();
+    setupSnapshot();
+    setupSessionTimer();
+    setupGroupBySource();
     startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }
