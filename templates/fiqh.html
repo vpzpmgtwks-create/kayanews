@@ -1169,7 +1169,7 @@ function buildCards() {
     card.dataset.sec = meta.sec === 0 ? 'تأصيل' : 'أحكام';
     card.dataset.halal = meta.tags.some(t => t.t.includes('حلال')) ? '1' : '';
     card.dataset.haram = meta.tags.some(t => t.t.includes('حرام')) ? '1' : '';
-    card.dataset.search = (m.title + ' ' + m.subtitle + ' ' + meta.tags.map(t=>t.t).join(' ')).toLowerCase();
+    card.dataset.search = (m.title + ' ' + m.subtitle + ' ' + m.preview + ' ' + m.full + ' ' + meta.tags.map(t=>t.t).join(' ')).toLowerCase();
 
     const tagsHTML = meta.tags.map(t => `<span class="tag ${t.c}">${t.t}</span>`).join('');
 

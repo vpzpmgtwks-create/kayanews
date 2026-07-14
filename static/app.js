@@ -390,6 +390,7 @@
       '<button class="ni-pin' + (pinnedUrls.has(url) ? ' pinned' : '') + '" data-pin-url="' + esc(url) + '" title="تثبيت">⭐</button>' +
       '<button class="ni-copy" data-copy-title="' + esc(title) + '" data-copy-url="' + esc(url) + '" title="نسخ العنوان">⧉</button>' +
       '<button class="ni-wa"   data-wa-title="'   + esc(title) + '" data-wa-url="'   + esc(url) + '" title="مشاركة واتساب">💬</button>' +
+      '<button class="ni-hide" title="إخفاء">✕</button>' +
       '</span></div></a>';
   }
 
@@ -399,7 +400,7 @@
     if (m) m.innerHTML = (r.markets || []).map(newsItem).join("") || emptyRow();
     setText("news-count", r.news_count != null ? r.news_count : "—");
     if (newsSearchTerm) setTimeout(filterNews, 60);
-    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); updateNewsCounts(); }, 0);
+    setTimeout(function () { applyPins(); applyHighlight(); buildSourceChips(); updateNewsCounts(); applyBreakingBadge(); updateReadCounter(); }, 0);
   }
   function emptyRow() {
     return '<div class="news-item"><div class="news-title" style="color:#9a988f">لا توجد أخبار متاحة حالياً</div></div>';
@@ -860,6 +861,107 @@
     el.classList.toggle("stale", (Date.now() / 1000 - lastGenTs) / 60 > 8);
   }
 
+  // ---- world clocks -----------------------------------------------------------
+  var BREAKING_WORDS = ["عاجل","يكسر","ينهار","يرتفع بشدة","ينخفض بشدة","يحظر","يمنع","يعلن","طارئ","أزمة","انهيار","حرب","هجوم"];
+  function setupWorldClocks() {
+    var zones = [
+      { id:"wc-dubai",  city:"دبي",     tz:4  },
+      { id:"wc-riyadh", city:"الرياض",  tz:3  },
+      { id:"wc-london", city:"لندن",    tz:1  },
+      { id:"wc-ny",     city:"نيويورك", tz:-4 }
+    ];
+    function paint() {
+      var now = new Date();
+      zones.forEach(function (z) {
+        var el = document.getElementById(z.id); if (!el) return;
+        var utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+        var local = new Date(utcMs + z.tz * 3600000);
+        var h = local.getHours(), m = local.getMinutes();
+        var hh = h < 10 ? "0"+h : h, mm = m < 10 ? "0"+m : m;
+        var ampm = h < 12 ? "ص" : "م";
+        var h12 = h % 12 || 12;
+        var t = (h12 < 10 ? "0"+h12 : h12) + ":" + mm + " " + ampm;
+        var isOpen = (z.id==="wc-ny") && local.getDay()>0 && local.getDay()<6 && (h*60+m)>=570 && (h*60+m)<960;
+        el.textContent = t;
+        el.className = "wclock-time" + (isOpen ? " open" : " closed");
+      });
+    }
+    paint(); setInterval(paint, 10000);
+  }
+
+  // ---- read counter ----------------------------------------------------------
+  function updateReadCounter() {
+    var el = $("news-read-counter"); if (!el) return;
+    var total = document.querySelectorAll(".news-item[data-url]").length;
+    var readCount = document.querySelectorAll(".news-item.news-read").length;
+    el.innerHTML = "قرأت <b>" + readCount + "</b>/" + total;
+  }
+
+  // ---- breaking news badge ---------------------------------------------------
+  function applyBreakingBadge() {
+    document.querySelectorAll(".news-item .news-title").forEach(function (el) {
+      var txt = (el.dataset.orig || el.textContent || "").toLowerCase();
+      var breaking = BREAKING_WORDS.some(function (w) { return txt.includes(w); });
+      var item = el.closest(".news-item");
+      if (item) item.classList.toggle("is-breaking", breaking);
+    });
+  }
+
+  // ---- hide news item --------------------------------------------------------
+  function setupHideNews() {
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest(".ni-hide");
+      if (!btn) return;
+      e.preventDefault(); e.stopPropagation();
+      var item = btn.closest(".news-item");
+      if (item) { item.classList.add("ni-hidden"); updateReadCounter(); toast("🙈 تم إخفاء الخبر"); }
+    });
+  }
+
+  // ---- time-based sort option ------------------------------------------------
+  // Patches into setupNewsSort to add a "recent" option
+  function patchNewsSortTime() {
+    var btn = $("btn-news-sort"); if (!btn) return;
+    var modes = ["↕ الترتيب", "↑ إيجابي", "↓ سلبي", "🕐 الأحدث"];
+    var idx = 0;
+    btn.addEventListener("click", function () {}, true); // no-op — overridden below
+    btn.onclick = function () {
+      idx = (idx + 1) % modes.length;
+      btn.textContent = modes[idx];
+      btn.classList.toggle("active", idx > 0);
+      ["geo-list","mk-list"].forEach(function (id) {
+        var el = $(id); if (!el) return;
+        if (idx === 0) { if (origNewsHtml[id]) el.innerHTML = origNewsHtml[id]; return; }
+        if (!origNewsHtml[id]) origNewsHtml[id] = el.innerHTML;
+        var items = Array.from(el.querySelectorAll("a.news-item[data-sent]"));
+        items.sort(function (a, b) {
+          if (idx === 3) {
+            var ta = a.querySelector(".news-meta span:nth-child(3)"), tb = b.querySelector(".news-meta span:nth-child(3)");
+            return (tb ? tb.textContent : "").localeCompare(ta ? ta.textContent : "");
+          }
+          var sa = parseFloat(a.dataset.sent||0), sb = parseFloat(b.dataset.sent||0);
+          return idx === 1 ? sb-sa : sa-sb;
+        });
+        items.forEach(function (it) { el.appendChild(it); });
+      });
+    };
+  }
+
+  // ---- export notes + today summary together ---------------------------------
+  function setupExportFull() {
+    var btn = $("btn-export-full"); if (!btn) return;
+    btn.addEventListener("click", function () {
+      var notes = ($("notes-ta") || {}).value || "";
+      var summary = formatReport(lastReport);
+      var text = summary + "\n\n" + "─".repeat(30) + "\n📝 ملاحظاتي:\n\n" + (notes.trim() || "لا توجد ملاحظات");
+      var a = document.createElement("a");
+      a.href = "data:text/plain;charset=utf-8," + encodeURIComponent(text);
+      a.download = "نشرة_السوق_" + new Date().toISOString().split("T")[0] + ".txt";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      toast("📥 تم تصدير النشرة + الملاحظات");
+    });
+  }
+
   // ---- refresh countdown bar --------------------------------------------------
   function setupRefreshProg() {
     var bar = $("refresh-prog"); if (!bar) return;
@@ -1186,6 +1288,10 @@
     setupDailyReminder();
     setupRefreshProg();
     setupCollapsible();
+    setupWorldClocks();
+    setupHideNews();
+    patchNewsSortTime();
+    setupExportFull();
     startClock();
     var seed = window.MB_REPORT;
     if (seed) { renderReport(seed, true); initialDone = true; }

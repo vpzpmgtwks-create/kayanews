@@ -90,6 +90,12 @@
       <div class="hero-content">
         <span class="badge"><span class="badge-dot"></span> نشرة السوق · تحديث لحظي</span>
         <div class="market-timer" id="market-timer">⏳ جاري...</div>
+        <div class="world-clocks">
+          <div class="wclock"><span class="wclock-city">دبي</span><span class="wclock-time" id="wc-dubai">--:--</span></div>
+          <div class="wclock"><span class="wclock-city">الرياض</span><span class="wclock-time" id="wc-riyadh">--:--</span></div>
+          <div class="wclock"><span class="wclock-city">لندن</span><span class="wclock-time" id="wc-london">--:--</span></div>
+          <div class="wclock"><span class="wclock-city">نيويورك</span><span class="wclock-time" id="wc-ny">--:--</span></div>
+        </div>
         <div class="hero-clock" id="hero-clock">
           <svg class="hc-ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
           <span class="hc-time" id="hc-time">—</span>
@@ -190,6 +196,7 @@
           <textarea id="notes-ta" class="notes-ta" placeholder="اكتب تحليلك أو ملاحظاتك هنا — تُحفظ تلقائياً..."></textarea>
           <div class="notes-actions">
             <button class="notes-action-btn" id="btn-export-notes">📥 تصدير الملاحظات</button>
+            <button class="notes-action-btn" id="btn-export-full">📋 النشرة + الملاحظات</button>
             <button class="notes-action-btn" id="btn-clear-read">🧹 مسح المقروءة</button>
           </div>
         </div>
@@ -246,7 +253,7 @@
 
     <!-- News -->
     <section class="section reveal" id="news">
-      <div class="sec-head"><span class="sec-num">٠٦</span><div class="eyebrow">الأخبار · <span id="news-count">—</span> خبر مُرشّح</div></div>
+      <div class="sec-head"><span class="sec-num">٠٦</span><div class="eyebrow">الأخبار · <span id="news-count">—</span> خبر مُرشّح</div><span class="news-read-counter" id="news-read-counter">قرأت <b>0</b>/0</span></div>
       <div class="news-filter-row">
         <div class="news-search-wrap">
           <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>

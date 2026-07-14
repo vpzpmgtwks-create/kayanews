@@ -1282,6 +1282,45 @@ table.hist tbody tr.hist-best td:first-child b { color: var(--up); }
 .hwc-trend { font-size: 11px; color: var(--ink-3); margin-top: 3px; }
 .hwc-trend.up { color: var(--up); } .hwc-trend.dn { color: var(--down); }
 
+/* ─── World Clocks ─── */
+.world-clocks {
+  display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px;
+}
+.wclock {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--surface-2); border: 1px solid var(--line-2);
+  border-radius: 10px; padding: 7px 12px;
+}
+.wclock-city { font-size: 10px; font-weight: 800; color: var(--ink-3); letter-spacing: .5px; }
+.wclock-time { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.wclock-time.open { color: var(--up); }
+.wclock-time.closed { color: var(--ink-2); }
+
+/* ─── Read Counter ─── */
+.news-read-counter {
+  font-size: 11px; font-weight: 700; color: var(--ink-3);
+  background: var(--surface-2); border: 1px solid var(--line-2);
+  border-radius: 999px; padding: 3px 10px;
+}
+.news-read-counter b { color: var(--up); }
+
+/* ─── Breaking Badge ─── */
+.news-item.is-breaking .news-title::before {
+  content: '⚡ عاجل';
+  display: inline-block; margin-left: 6px; vertical-align: middle;
+  font-size: 9px; font-weight: 800; padding: 1px 6px; border-radius: 999px;
+  background: rgba(240,60,60,.16); border: 1px solid rgba(240,60,60,.35); color: #f04040;
+}
+
+/* ─── Hidden News Item ─── */
+.news-item.ni-hidden { display: none !important; }
+.ni-hide {
+  background: none; border: none; cursor: pointer; padding: 2px 5px;
+  color: var(--ink-3); font-size: 12px; line-height: 1;
+  border-radius: 4px; transition: color .15s;
+}
+.ni-hide:hover { color: var(--down); }
+
 /* Freeze one-shot entrances when tab is hidden */
 body.still,
 body.still::before,

@@ -44,6 +44,7 @@
     <div class="eyebrow">📑 سجلّ التقارير · {{ rows|length }} يوم محفوظ</div>
     {% if rows %}
     <div class="hist-weekly-compare" id="hist-weekly-compare"></div>
+    <div class="hist-score-filter" id="hist-month-filter" style="margin-bottom:10px"></div>
     <div class="hist-score-filter" id="hist-score-filter">
       <button class="hsf-chip active" data-range="all">الكل</button>
       <button class="hsf-chip" data-range="good">🟢 ممتاز (7+)</button>
@@ -224,6 +225,35 @@
       card('هذا الأسبوع (' + thisW.length + ' أيام)', tAvg, diff != null ? trendTxt : '', trendCls) +
       card('الأسبوع الماضي (' + lastW.length + ' أيام)', lAvg, '', '') +
       card('أفضل يوم', bestScore, '', '');
+  })();
+
+  // ── Month filter ───────────────────────────────────────────────────────────
+  (function () {
+    var mf = document.getElementById('hist-month-filter'); if (!mf || !ROWS.length) return;
+    var months = {};
+    ROWS.forEach(function (r) {
+      var m = (r.date || '').slice(0, 7);
+      if (m) months[m] = (months[m] || 0) + 1;
+    });
+    var keys = Object.keys(months).sort().reverse();
+    if (keys.length < 2) return;
+    var html = '<button class="hsf-chip active" data-month="all">كل الأشهر</button>';
+    keys.forEach(function (k) {
+      var parts = k.split('-');
+      var label = parts[0] + '/' + parts[1];
+      html += '<button class="hsf-chip" data-month="' + k + '">' + label + ' (' + months[k] + ')</button>';
+    });
+    mf.innerHTML = html;
+    mf.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-month]'); if (!btn) return;
+      mf.querySelectorAll('[data-month]').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      var month = btn.dataset.month;
+      document.querySelectorAll('table.hist tbody tr').forEach(function (tr, i) {
+        var show = month === 'all' || (ROWS[i] && (ROWS[i].date || '').startsWith(month));
+        tr.style.display = show ? '' : 'none';
+      });
+    });
   })();
 
   // ── Score range filter ─────────────────────────────────────────────────────
