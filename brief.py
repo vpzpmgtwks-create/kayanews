@@ -147,6 +147,15 @@ NEWS_FEEDS = [
     # Broad financial data aggregators
     ("Investing.com",       "https://www.investing.com/rss/news.rss",                     "markets"),
     ("Yahoo Finance",       "https://finance.yahoo.com/news/rssindex",                    "markets"),
+    # Twitter/X breaking-news accounts, mirrored via a public Nitter instance
+    # (X has no free API/RSS of its own). These are the accounts traders
+    # actually watch for first-to-publish flashes. A single shared mirror is
+    # inherently less stable than an official feed — if nitter.net goes down
+    # or rate-limits, _parse_feed logs it and these 3 simply drop out for
+    # that cycle without affecting the other 16 sources.
+    ("Walter Bloomberg (X)", "https://nitter.net/DeItaone/rss",                             "markets"),
+    ("ZeroHedge (X)",        "https://nitter.net/zerohedge/rss",                            "markets"),
+    ("unusual_whales (X)",   "https://nitter.net/unusual_whales/rss",                       "markets"),
 ]
 
 # Trusted / specialized sources get a relevance boost so they outrank
@@ -154,6 +163,7 @@ NEWS_FEEDS = [
 PRECISION_SOURCES = {
     "BBC World", "The Guardian World", "The Guardian Business", "NPR World",
     "ForexLive", "CoinDesk", "CoinTelegraph", "OilPrice", "Wolf Street",
+    "Walter Bloomberg (X)", "ZeroHedge (X)", "unusual_whales (X)",
 }
 
 VIX_URL = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1mo"
@@ -206,6 +216,10 @@ GEO_KEYWORDS = [
     "russia", "ukraine", "israel", "gaza", "iran", "china", "taiwan",
     "north korea", "red sea", "houthi", "hormuz", "middle east", "nato",
     "election", "airstrike", "drone",
+    # Flash-headline vocabulary (Twitter-style breaking-news phrasing)
+    "explosion", "explosions", "blast", "gunfire", "shooting", "evacuat",
+    "witnesses", "casualties", "dubai", "riyadh", "lebanon", "syria",
+    "yemen", "breaking",
 ]
 FIN_KEYWORDS = [
     "fed", "federal reserve", "interest rate", "rate cut", "rate hike",

@@ -357,7 +357,7 @@ a { color: inherit; text-decoration: none; }
   background: #f6f3ef; border-color: var(--line);
   box-shadow: 0 30px 70px -40px rgba(20,18,14,.5);
 }
-.tray-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.tray-grid { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start; }
 @media (min-width: 620px) { .tray-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 900px) { .tray-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; } }
 
@@ -1983,3 +1983,50 @@ body, .card, .panel, .tick, .navpill, .tray, .dcard, .news-item {
 
 /* ── Gauges: soft amber depth ── */
 .gauge svg { filter: drop-shadow(0 6px 18px rgba(240,120,24,.12)); }
+
+/* ===================================================================== */
+/*  SCORE CARD — the daily rating is the single most important number,   */
+/*  give it a visibly bigger, warmer, distinctly-lit home in the tray.    */
+/* ===================================================================== */
+.dcard-score {
+  order: -1;                     /* leads the tray on every breakpoint */
+  --score-color: var(--orange);
+  position: relative;
+  background:
+    radial-gradient(120% 140% at 50% -10%, color-mix(in srgb, var(--score-color) 14%, transparent) 0%, transparent 60%),
+    #141414;
+  border-color: color-mix(in srgb, var(--score-color) 30%, #1e1e1e);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--score-color) 10%, transparent);
+}
+[data-theme="light"] .dcard-score {
+  background:
+    radial-gradient(120% 140% at 50% -10%, color-mix(in srgb, var(--score-color) 10%, transparent) 0%, transparent 60%),
+    #ffffff;
+}
+@keyframes scoreGlow {
+  0%, 100% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--score-color) 12%, transparent), 0 0 0 rgba(0,0,0,0); }
+  50%      { box-shadow: 0 0 0 1px color-mix(in srgb, var(--score-color) 30%, transparent), 0 0 34px -6px color-mix(in srgb, var(--score-color) 45%, transparent); }
+}
+.dcard-score { animation: scoreGlow 4.5s ease-in-out infinite; }
+
+.score-big-row {
+  display: flex; align-items: baseline; gap: 7px; margin-top: 10px;
+}
+.score-big {
+  font-family: "Tajawal", sans-serif; font-weight: 800;
+  font-size: 52px; line-height: 1; letter-spacing: -1.5px;
+  color: var(--score-color);
+  font-variant-numeric: tabular-nums;
+  transition: color .4s var(--ease);
+}
+.score-big-unit { font-size: 15px; font-weight: 700; color: var(--ink-3); }
+.score-big.bump { animation: scoreBump .5s var(--ease-spring); }
+@keyframes scoreBump { 0% { transform: scale(1); } 35% { transform: scale(1.14); } 100% { transform: scale(1); } }
+
+.dcard-score .dc-key { font-weight: 800; }
+.dcard-score .dc-state { font-size: 21px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dcard-score { animation: none; }
+  .score-big.bump { animation: none; }
+}

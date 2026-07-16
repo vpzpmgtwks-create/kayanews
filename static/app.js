@@ -222,6 +222,7 @@
     drawSpark(vix, initial);
   }
 
+  var _lastBigScore = null;
   function renderScore(sc, initial) {
     sc = sc || {};
     var color = sc.color || "#ef4d23";
@@ -230,6 +231,17 @@
     animGaugeTick("g-score", score, pct, function (v) { return num(v, 1); }, color, initial ? 760 : 0);
     var lbl = $("hv-score-lbl");
     if (lbl) { lbl.textContent = sc.label_ar || "—"; lbl.style.color = color; }
+
+    var card = $("score-card");
+    if (card) card.style.setProperty("--score-color", color);
+    var big = $("hv-score-big");
+    if (big && score != null) {
+      big.textContent = num(score, 1);
+      if (!initial && _lastBigScore !== null && _lastBigScore !== score) {
+        big.classList.remove("bump"); void big.offsetWidth; big.classList.add("bump");
+      }
+      _lastBigScore = score;
+    }
   }
 
   // News-sentiment badge next to the score: the index + pos/neg headline split,
