@@ -561,7 +561,9 @@ def fetch_news(force: bool = False) -> list[dict]:
                 "tags": sorted(set(geo_hits + fin_hits))[:5],
             })
 
-    items.sort(key=lambda x: (x["relevance"], x["published"] or 0), reverse=True)
+    # Freshness first: the newest relevant headline always leads, relevance
+    # only breaks ties between articles published in the same minute.
+    items.sort(key=lambda x: (x["published"] or 0, x["relevance"]), reverse=True)
     _NEWS_CACHE["ts"] = time.time()
     _NEWS_CACHE["data"] = items
     return items
