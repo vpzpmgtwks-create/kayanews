@@ -278,7 +278,7 @@
       var prev = _prevPrices[q.name];
       var flash = prev != null && prev !== q.price ? (q.price > prev ? " flash-up" : " flash-down") : "";
       _prevPrices[q.name] = q.price;
-      return '<div class="tick' + flash + '"><div class="t-name">' + esc(q.name) + '</div>' +
+      return '<div class="tick t-' + cls + flash + '"><div class="t-name">' + esc(q.name) + '</div>' +
         '<div class="t-price">' + num(q.price, q.price >= 1000 ? 0 : 2) + '</div>' +
         '<div class="t-chg ' + cls + '">' + ar + " " + signed(q.change_pct, 2) + '%</div></div>';
     }).join("");

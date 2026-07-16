@@ -1917,3 +1917,69 @@ body, .card, .panel, .tick, .navpill, .tray, .dcard, .news-item {
 @media (prefers-reduced-motion: reduce) {
   .hero-orb, .hl-em, .tray, .livepill .dot, .badge-dot { animation: none !important; }
 }
+
+/* ===================================================================== */
+/*  FOOTER v2 — organized, premium                                        */
+/* ===================================================================== */
+.foot2 {
+  margin-top: 56px;
+  border-top: 1px solid var(--line);
+  padding-top: 34px;
+}
+.foot2-grid {
+  display: grid; grid-template-columns: 1fr; gap: 28px;
+  text-align: right;
+}
+@media (min-width: 760px) { .foot2-grid { grid-template-columns: 1.3fr 1fr 1.1fr; gap: 36px; } }
+
+.foot2-logo { display: flex; align-items: center; gap: 10px; font-size: 17px; }
+.foot2-desc {
+  margin: 12px 0 0; font-size: 13.5px; color: var(--ink-2);
+  line-height: 1.8; max-width: 340px;
+}
+.foot2-meta { margin-top: 12px; font-size: 12.5px; color: var(--ink-3); }
+.foot2-meta b { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+.foot2-title {
+  font-size: 11.5px; font-weight: 800; letter-spacing: 2px;
+  color: var(--orange); text-transform: uppercase; margin-bottom: 14px;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.foot2-title::before { content: ""; width: 14px; height: 2px; border-radius: 2px; background: var(--orange); }
+
+.foot2-tools { display: flex; flex-wrap: wrap; gap: 8px; }
+.ft-btn {
+  font-family: "Tajawal", sans-serif; font-size: 12.5px; font-weight: 700;
+  color: var(--ink-2); background: var(--surface); border: 1px solid var(--line-2);
+  padding: 7px 14px; border-radius: 999px; cursor: pointer;
+  transition: border-color .2s var(--ease), color .2s var(--ease), background .2s var(--ease);
+}
+.ft-btn:hover { border-color: rgba(240,120,24,.4); color: var(--orange); background: rgba(240,120,24,.06); }
+
+.foot2-timer-row {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  margin-bottom: 10px; font-size: 12.5px; color: var(--ink-3);
+}
+.foot2-unit { font-size: 11px; color: var(--ink-3); }
+
+.foot2-bottom {
+  margin-top: 30px; padding: 18px 0 26px;
+  border-top: 1px solid var(--line);
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px;
+  font-size: 12px; color: var(--ink-3); text-align: center;
+}
+.foot2-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--line-2); }
+.foot2-tg { color: var(--orange); font-weight: 700; transition: color .2s; }
+.foot2-tg:hover { color: var(--orange-3); }
+
+/* ── Tickers: directional hairline on top edge ── */
+.tick { position: relative; overflow: hidden; }
+.tick::before {
+  content: ""; position: absolute; top: 0; right: 12%; left: 12%; height: 2px;
+  border-radius: 0 0 3px 3px; opacity: .85;
+}
+.tick.t-up::before   { background: linear-gradient(90deg, transparent, var(--up), transparent); }
+.tick.t-down::before { background: linear-gradient(90deg, transparent, var(--down), transparent); }
+
+/* ── Gauges: soft amber depth ── */
+.gauge svg { filter: drop-shadow(0 6px 18px rgba(240,120,24,.12)); }
