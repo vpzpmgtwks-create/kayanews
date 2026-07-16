@@ -10,6 +10,7 @@ Market Brief engine — 100% free, no API keys.
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 import threading
@@ -124,38 +125,35 @@ def get_telegram_log() -> list[dict]:
 # Sources (all free, no API key required)
 # --------------------------------------------------------------------------- #
 NEWS_FEEDS = [
-    # Wire services — publish within seconds of breaking events
-    ("Reuters World",    "https://feeds.reuters.com/Reuters/worldNews",                "geopolitics"),
-    ("Reuters Politics", "https://feeds.reuters.com/Reuters/PoliticsNews",             "geopolitics"),
-    ("Reuters Business", "https://feeds.reuters.com/reuters/businessNews",             "markets"),
-    ("Reuters Finance",  "https://feeds.reuters.com/reuters/financialsNews",           "markets"),
-    # Broad news
-    ("Al Jazeera",       "https://www.aljazeera.com/xml/rss/all.xml",                  "geopolitics"),
-    ("BBC World",        "https://feeds.bbci.co.uk/news/world/rss.xml",                "geopolitics"),
-    # Financial Juice — aggregates top financial Twitter/X analysts in real time
-    ("Financial Juice",  "https://financialjuice.com/feed.ashx",                       "markets"),
-    # Specialized financial / macro
-    ("ForexLive",        "https://www.forexlive.com/feed/news",                        "markets"),
-    ("CNBC Markets",     "https://www.cnbc.com/id/100003114/device/rss/rss.html",      "markets"),
-    ("CNBC Economy",     "https://www.cnbc.com/id/20910258/device/rss/rss.html",       "markets"),
-    ("MarketWatch",      "https://feeds.content.dowjones.io/public/rss/mw_topstories", "markets"),
-    # Precision macro analysis (Substack newsletters from top analysts)
-    ("Kobeissi Letter",  "https://thekobeissiletter.substack.com/feed",                "markets"),
-    ("Wolf Street",      "https://wolfstreet.com/feed/",                               "markets"),
-    # Crypto — specialized
-    ("CoinDesk",         "https://www.coindesk.com/arc/outboundfeeds/rss/",            "markets"),
-    ("CoinTelegraph",    "https://cointelegraph.com/rss",                              "markets"),
-    ("Blockworks",       "https://blockworks.co/feed",                                 "markets"),
+    # Major broadcasters / wire-adjacent outlets — internationally trusted,
+    # editorial fact-checking desks, no anonymous aggregation
+    ("Al Jazeera",          "https://www.aljazeera.com/xml/rss/all.xml",                  "geopolitics"),
+    ("BBC World",           "https://feeds.bbci.co.uk/news/world/rss.xml",                "geopolitics"),
+    ("The Guardian World",  "https://www.theguardian.com/world/rss",                      "geopolitics"),
+    ("NPR World",           "https://feeds.npr.org/1004/rss.xml",                         "geopolitics"),
+    # Specialized financial / macro — real-time, sourced by beat reporters
+    ("ForexLive",           "https://www.forexlive.com/feed/news",                        "markets"),
+    ("CNBC Markets",        "https://www.cnbc.com/id/100003114/device/rss/rss.html",      "markets"),
+    ("CNBC Economy",        "https://www.cnbc.com/id/20910258/device/rss/rss.html",       "markets"),
+    ("MarketWatch",         "https://feeds.content.dowjones.io/public/rss/mw_topstories", "markets"),
+    ("The Guardian Business","https://www.theguardian.com/uk/business/rss",               "markets"),
+    ("Wolf Street",         "https://wolfstreet.com/feed/",                               "markets"),
+    # Crypto — specialized, editorial desks (not press-release mills)
+    ("CoinDesk",            "https://www.coindesk.com/arc/outboundfeeds/rss/",            "markets"),
+    ("CoinTelegraph",       "https://cointelegraph.com/rss",                              "markets"),
+    ("Blockworks",          "https://blockworks.co/feed",                                 "markets"),
     # Energy / Commodities
-    ("OilPrice",         "https://oilprice.com/rss/main",                              "markets"),
-    # Broad financial coverage
-    ("Investing.com",    "https://www.investing.com/rss/news.rss",                     "markets"),
+    ("OilPrice",            "https://oilprice.com/rss/main",                              "markets"),
+    # Broad financial data aggregators
+    ("Investing.com",       "https://www.investing.com/rss/news.rss",                     "markets"),
+    ("Yahoo Finance",       "https://finance.yahoo.com/news/rssindex",                    "markets"),
 ]
 
-# Precision / wire sources get a relevance boost so they rank above generic news
+# Trusted / specialized sources get a relevance boost so they outrank
+# lower-signal aggregators when both cover the same story
 PRECISION_SOURCES = {
-    "Financial Juice", "Kobeissi Letter", "Wolf Street", "ForexLive",
-    "Reuters World", "Reuters Politics", "Reuters Business", "Reuters Finance",
+    "BBC World", "The Guardian World", "The Guardian Business", "NPR World",
+    "ForexLive", "CoinDesk", "CoinTelegraph", "OilPrice", "Wolf Street",
 }
 
 VIX_URL = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1mo"
@@ -496,15 +494,22 @@ def fetch_stablecoins() -> dict:
 # --------------------------------------------------------------------------- #
 # News
 # --------------------------------------------------------------------------- #
-def _parse_feed(url: str):
+def _parse_feed(name: str, url: str):
     """Download the feed with an explicit timeout via requests, then hand the
     bytes to feedparser. feedparser's own fetch has no timeout and can hang the
     whole request if a single RSS host stalls, so we never let it fetch."""
     try:
         r = requests.get(url, headers=BROWSER_HEADERS, timeout=(4, 8))
         r.raise_for_status()
-        return feedparser.parse(r.content)
-    except Exception:  # noqa: BLE001
+        feed = feedparser.parse(r.content)
+        if not feed.entries:
+            logging.warning("news source returned 0 entries: %s (%s)", name, url)
+        return feed
+    except Exception as e:  # noqa: BLE001
+        # Log so a source going dark shows up in server logs instead of
+        # silently disappearing from the feed (e.g. feeds.reuters.com, which
+        # Reuters retired — this used to fail quietly for every cycle).
+        logging.warning("news source unreachable: %s (%s) — %s", name, url, e)
         return None
 
 
@@ -518,7 +523,7 @@ def fetch_news(force: bool = False) -> list[dict]:
 
     # download all feeds in parallel, then process them in declared order
     with ThreadPoolExecutor(max_workers=len(NEWS_FEEDS)) as ex:
-        feeds = list(ex.map(lambda f: _parse_feed(f[1]), NEWS_FEEDS))
+        feeds = list(ex.map(lambda f: _parse_feed(f[0], f[1]), NEWS_FEEDS))
 
     for (source, url, category), feed in zip(NEWS_FEEDS, feeds):
         if feed is None:
